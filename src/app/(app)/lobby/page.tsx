@@ -1,17 +1,29 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { Suspense } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useAuth } from '@/features/auth/auth-provider'
 import { useRequireAuth } from '@/features/auth/use-require-auth'
+import { createRoom, joinRoom } from '@/features/rooms/api'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
 
-export default function LobbyPage() {
+function LobbyContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const role = searchParams.get('role')
   const { signOut, profile, user } = useAuth()
   const { loading, isAuthenticated } = useRequireAuth()
+
+  const [roomName, setRoomName] = useState('Nova sessão')
+  const [roomCode, setRoomCode] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   if (loading) {
     return (
@@ -27,6 +39,118 @@ export default function LobbyPage() {
 
   const displayName =
     profile?.display_name ?? user?.user_metadata?.display_name ?? user?.email ?? 'Jogador'
+
+  const handleCreateRoom = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      const room = await createRoom(roomName.trim() || 'Nova sessão')
+      router.push(`/room/${room.code}/master/`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao criar sala.')
+      setBusy(false)
+    }
+  }
+
+  const handleJoinRoom = async () => {
+    if (!roomCode.trim()) {
+      setError('Informe o código da sala.')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const room = await joinRoom(roomCode)
+      const isMaster = room.master_id === user?.id
+      router.push(isMaster ? `/room/${room.code}/master/` : `/room/${room.code}/player/`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao entrar na sala.')
+      setBusy(false)
+    }
+  }
+
+  if (role === 'master') {
+    return (
+      <div className="min-h-screen bg-[var(--parchment-dark)] px-4 py-10">
+        <div className="mx-auto max-w-lg">
+          <Button variant="ghost" className="mb-6" asChild>
+            <Link href="/lobby/">← Voltar</Link>
+          </Button>
+          <Card className="border-[var(--parchment-deep)] bg-[var(--parchment)]">
+            <CardHeader>
+              <CardTitle className="font-heading">Criar sala</CardTitle>
+              <CardDescription>
+                Você receberá um código de 6 caracteres para convidar jogadores.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="room-name">Nome da sessão</Label>
+                <Input
+                  id="room-name"
+                  data-testid="room-name-input"
+                  value={roomName}
+                  onChange={(e) => setRoomName(e.target.value)}
+                />
+              </div>
+              {error && <p className="text-sm text-[var(--crimson)]">{error}</p>}
+              <Button
+                className="w-full"
+                disabled={busy}
+                data-testid="create-room-submit"
+                onClick={() => void handleCreateRoom()}
+              >
+                {busy ? 'Criando…' : 'Criar sala'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (role === 'player') {
+    return (
+      <div className="min-h-screen bg-[var(--parchment-dark)] px-4 py-10">
+        <div className="mx-auto max-w-lg">
+          <Button variant="ghost" className="mb-6" asChild>
+            <Link href="/lobby/">← Voltar</Link>
+          </Button>
+          <Card className="border-[var(--parchment-deep)] bg-[var(--parchment)]">
+            <CardHeader>
+              <CardTitle className="font-heading">Entrar na sala</CardTitle>
+              <CardDescription>
+                Digite o código de 6 caracteres fornecido pelo mestre.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="room-code">Código</Label>
+                <Input
+                  id="room-code"
+                  data-testid="room-code-input"
+                  value={roomCode}
+                  maxLength={6}
+                  className="uppercase tracking-widest"
+                  placeholder="ABC123"
+                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                />
+              </div>
+              {error && <p className="text-sm text-[var(--crimson)]">{error}</p>}
+              <Button
+                className="w-full"
+                disabled={busy}
+                data-testid="join-room-submit"
+                onClick={() => void handleJoinRoom()}
+              >
+                {busy ? 'Entrando…' : 'Entrar na sala'}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[var(--parchment-dark)] px-4 py-10">
@@ -64,9 +188,6 @@ export default function LobbyPage() {
               >
                 Entrar como Mestre
               </Button>
-              <p className="mt-3 text-xs text-[var(--steel-light)]">
-                Salas completas chegam na Fase 3. Por ora, confirme seu papel aqui.
-              </p>
             </CardContent>
           </Card>
 
@@ -96,5 +217,19 @@ export default function LobbyPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LobbyPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[var(--parchment-dark)]">
+          <p data-testid="lobby-loading">Carregando…</p>
+        </div>
+      }
+    >
+      <LobbyContent />
+    </Suspense>
   )
 }

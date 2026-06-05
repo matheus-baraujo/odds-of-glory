@@ -1,0 +1,153 @@
+'use client'
+
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+
+import { Button } from '@/components/ui/button'
+import { Select } from '@/components/ui/select'
+import { useAuth } from '@/features/auth/auth-provider'
+import { useRequireAuth } from '@/features/auth/use-require-auth'
+import { listCharacters } from '@/features/characters/api'
+import {
+  getRoomByCode,
+  getRoomParticipant,
+  setParticipantCharacter,
+  type GameRoom,
+} from '@/features/rooms/api'
+import type { CharacterRow } from '@/types/character-sheet'
+
+import { PlayerGameView } from './player-game-view'
+
+export function PlayerRoomClient({ code }: { code: string }) {
+  const router = useRouter()
+  const { user } = useAuth()
+  const { loading: authLoading, isAuthenticated } = useRequireAuth()
+
+  const [room, setRoom] = useState<GameRoom | null>(null)
+  const [characters, setCharacters] = useState<CharacterRow[]>([])
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [needsCharacter, setNeedsCharacter] = useState(false)
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) return
+
+    void (async () => {
+      try {
+        const roomData = await getRoomByCode(code)
+        if (!roomData) {
+          setError('Sala não encontrada.')
+          return
+        }
+
+        const participant = await getRoomParticipant(roomData.id, user.id)
+        if (!participant) {
+          setError('Você não está nesta sala.')
+          return
+        }
+
+        if (participant.session_role === 'master') {
+          router.replace(`/room/${code}/master/`)
+          return
+        }
+
+        setRoom(roomData)
+        const chars = await listCharacters()
+        setCharacters(chars)
+
+        if (participant.character_id) {
+          setSelectedCharacterId(participant.character_id)
+        } else {
+          setNeedsCharacter(true)
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro ao carregar sala.')
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [code, isAuthenticated, user, router])
+
+  const confirmCharacter = async (characterId: string) => {
+    if (!room) return
+    await setParticipantCharacter(room.id, characterId)
+    setSelectedCharacterId(characterId)
+    setNeedsCharacter(false)
+  }
+
+  if (authLoading || loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--parchment-dark)]">
+        <p data-testid="player-room-loading">Carregando sala…</p>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) return null
+
+  if (error || !room) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--parchment-dark)]">
+        <p data-testid="player-room-error">{error ?? 'Sala não encontrada.'}</p>
+        <Button variant="outline" asChild>
+          <Link href="/lobby/">Voltar ao lobby</Link>
+        </Button>
+      </div>
+    )
+  }
+
+  if (needsCharacter || !selectedCharacterId) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--parchment-dark)] px-4">
+        <div className="w-full max-w-md rounded-xl border border-[var(--parchment-deep)] bg-[var(--parchment)] p-8">
+          <h1 className="font-heading text-xl font-semibold text-[var(--ink)]">
+            Escolha sua ficha
+          </h1>
+          <p className="mt-2 text-sm text-[var(--steel-light)]">
+            Sala {room.code} — {room.name}
+          </p>
+
+          {characters.length === 0 ? (
+            <div className="mt-6 space-y-3">
+              <p className="text-sm text-[var(--steel-light)]">
+                Você ainda não tem fichas. Crie uma antes de entrar na mesa.
+              </p>
+              <Button asChild>
+                <Link href="/characters/new/" data-testid="player-create-character">
+                  Criar ficha
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-6 space-y-4">
+              <Select
+                data-testid="player-character-select"
+                value={selectedCharacterId ?? ''}
+                onChange={(e) => setSelectedCharacterId(e.target.value || null)}
+              >
+                <option value="">Selecione…</option>
+                {characters.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} (Tier {c.tier})
+                  </option>
+                ))}
+              </Select>
+              <Button
+                className="w-full"
+                disabled={!selectedCharacterId}
+                data-testid="player-confirm-character"
+                onClick={() => selectedCharacterId && void confirmCharacter(selectedCharacterId)}
+              >
+                Confirmar ficha
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  return <PlayerGameView room={room} characterId={selectedCharacterId} />
+}
