@@ -1,0 +1,20 @@
+# Supabase local config — apply migrations via CLI or Dashboard SQL editor
+
+[project]
+# Set your project id when linking: supabase link --project-ref <ref>
+
+[db]
+major_version = 15
+
+[auth]
+site_url = "http://localhost:3000/odds-of-glory/"
+additional_redirect_urls = [
+  "http://localhost:3000/odds-of-glory/auth/callback/",
+  "https://*.github.io/odds-of-glory/auth/callback/"
+]
+
+[auth.email]
+enable_signup = true
+
+[realtime]
+enabled = true

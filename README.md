@@ -1,36 +1,162 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Odds of Glory
 
-## Getting Started
+Mesa virtual para **Fir Aesvold** — fichas de personagem, salas de jogo, chat em tempo real e rolagens d6. Frontend estático (Next.js export) com **Supabase** como backend (Auth, Postgres, Realtime, RLS).
 
-First, run the development server:
+## Pré-requisitos
+
+- Node.js 22+
+- Conta [Supabase](https://supabase.com)
+- (Opcional) Google Cloud Console — OAuth para login com Google
+
+## Variáveis de ambiente
+
+Copie `.env.example` para `.env.local`:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Variável | Descrição |
+|----------|-----------|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anon/public do Supabase |
+| `NEXT_PUBLIC_BASE_PATH` | Base path do app (`/odds-of-glory` no GitHub Pages) |
+| `NEXT_PUBLIC_ADMIN_PATH` | Segmento oculto da rota admin (ex: `admin-seu-segredo-aqui`) |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup Supabase
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Criar projeto
 
-## Learn More
+Crie um projeto em [supabase.com/dashboard](https://supabase.com/dashboard).
 
-To learn more about Next.js, take a look at the following resources:
+### 2. Aplicar migrations
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Com a [Supabase CLI](https://supabase.com/docs/guides/cli):
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+cd odds-of-glory
+supabase link --project-ref <seu-project-ref>
+supabase db push
+```
 
-## Deploy on Vercel
+Ou cole o conteúdo de `supabase/migrations/*.sql` no **SQL Editor** do Dashboard, na ordem.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+As migrations criam:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `profiles`, `characters`, `game_rooms`, `room_participants`, `chat_messages`, `character_snapshots`
+- Conteúdo administrável: `game_options`, `equipment_templates`, `aspect_templates`, `rule_blocks`
+- Políticas **RLS** (owner, master, player, admin, room member)
+- Trigger de perfil ao registrar usuário
+- Seed inicial (Atitudes, perícias, idiomas, condições, tier stats) a partir de `references/Core Rules.md`
+
+### 3. Realtime
+
+No Dashboard: **Database → Replication** — confirme que `chat_messages` está na publicação `supabase_realtime` (a migration tenta adicionar automaticamente).
+
+### 4. GraphQL (opcional, Fase 2+)
+
+Habilite a extensão `pg_graphql` em **Database → Extensions** para queries GraphQL em `/graphql/v1`.
+
+### 5. Tornar um usuário admin
+
+Após o primeiro login:
+
+```sql
+update public.profiles set is_admin = true where id = '<uuid-do-usuario>';
+```
+
+## Google OAuth
+
+1. **Google Cloud Console** → Credentials → OAuth 2.0 Client ID (Web).
+2. **Authorized redirect URIs** (Supabase callback):
+   - `https://<project-ref>.supabase.co/auth/v1/callback`
+3. **Supabase Dashboard** → Authentication → Providers → Google: cole Client ID e Secret.
+4. **Supabase** → Authentication → URL Configuration → Redirect URLs:
+   - `http://localhost:3000/odds-of-glory/auth/callback/`
+   - `https://<user>.github.io/odds-of-glory/auth/callback/`
+
+O app usa **PKCE** no cliente; tokens ficam no mecanismo client-side do Supabase (`localStorage`). Export estático no GitHub Pages não suporta cookies `httpOnly` sem backend dedicado.
+
+## Desenvolvimento local
+
+```bash
+cd odds-of-glory
+npm install
+npm run dev
+```
+
+Abra [http://localhost:3000/odds-of-glory/](http://localhost:3000/odds-of-glory/) (basePath aplicado automaticamente).
+
+## Build e export estático
+
+```bash
+npm run build
+```
+
+Saída em `out/`. Configuração em `next.config.ts`: `output: 'export'`, `basePath`, `trailingSlash`.
+
+## Testes E2E (Playwright)
+
+```bash
+npm run test:e2e
+npm run test:e2e:ui   # modo interativo
+```
+
+Cenários mínimos em `e2e/`:
+
+- Login (formulário + credenciais inválidas com Supabase configurado)
+- Rotas protegidas redirecionam sem sessão
+- Lobby / admin / fichas exigem autenticação
+
+## Deploy — GitHub Pages
+
+Workflow: `.github/workflows/deploy.yml` (dispara no push em `main`).
+
+1. **Settings → Pages → Source:** GitHub Actions.
+2. **Settings → Secrets → Actions:**
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_ADMIN_PATH` (opcional)
+
+URL final: `https://<user>.github.io/odds-of-glory/`
+
+## Arquitetura
+
+```text
+Next.js (static export, SPA)
+  ├── Auth PKCE → Supabase Auth (email + Google)
+  ├── Dados → Supabase Postgres + RLS
+  └── Chat → Supabase Realtime (chat_messages)
+```
+
+Toda autorização sensível vive em **RLS** no Postgres — o frontend apenas reflete permissões; nunca confie só no cliente.
+
+## Estrutura do projeto
+
+```text
+src/
+├── app/
+│   ├── (auth)/login, register
+│   ├── auth/callback          # OAuth PKCE
+│   ├── (app)/lobby, characters
+│   └── (admin)/[adminPath]
+├── components/ui/             # shadcn
+├── features/auth/
+├── lib/supabase/
+└── types/
+supabase/migrations/           # schema + seed
+e2e/                           # Playwright
+```
+
+## Scripts
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Servidor de desenvolvimento |
+| `npm run build` | Build + export estático |
+| `npm run lint` | ESLint |
+| `npm run test:e2e` | Testes Playwright |
+
+## Licença
+
+Projeto de portfólio / playtest — regras Fir Aesvold em evolução; conteúdo administrável via CMS admin (Fase 5).

@@ -49,14 +49,25 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --ink: #1a1410;
+  --parchment: #f0e8d5;
+  --parchment-dark: #e2d4bb;
+  --parchment-deep: #c8b898;
+  --gold: #8b6914;
+  --gold-light: #c9a227;
+  --crimson: #7a1e1e;
+  --steel: #3d4a5c;
+  --steel-light: #5a6a7e;
+  --font-sans: var(--font-crimson), Georgia, serif;
+  --font-heading: var(--font-cinzel), serif;
+  --background: var(--parchment);
+  --foreground: var(--ink);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: var(--steel);
+  --primary-foreground: var(--gold-light);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
