@@ -255,7 +255,12 @@ create policy "profiles_select_own_or_room_master"
 create policy "profiles_update_own"
   on public.profiles for update
   using (auth.uid() = id)
-  with check (auth.uid() = id);
+  with check (
+  auth.uid() = id
+  and is_admin is not distinct from (
+    select p.is_admin from public.profiles p where p.id = auth.uid()
+  )
+)
 
 -- Published content readable by authenticated users
 create policy "game_options_select_published"
