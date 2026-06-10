@@ -21,14 +21,14 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--parchment-dark)] px-4">
       <div className="max-w-lg text-center">
-        <p className="font-heading text-xs uppercase tracking-[0.35em] text-[var(--gold)]">
-          Fir Aesvold
+        <p className="font-heading text-sm uppercase tracking-[0.35em] text-[var(--gold)]">
+          Odds of Glory
         </p>
         <h1 className="font-heading mt-3 text-4xl font-semibold text-[var(--ink)]">
-          Odds of Glory
+          Mesa virtual
         </h1>
-        <p className="mt-4 text-[var(--steel-light)]">
-          Mesa virtual para fichas, salas de jogo, chat e rolagens d6 do sistema Fir Aesvold.
+        <p className="mt-4 text-base text-[var(--steel-light)]">
+          Fichas, salas de jogo, chat e rolagens d6 em tempo real.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Button asChild data-testid="home-login">
@@ -39,7 +39,7 @@ export default function HomePage() {
           </Button>
         </div>
         {!configured ? (
-          <p className="mt-6 text-xs text-[var(--steel-light)]">
+          <p className="mt-6 text-sm text-[var(--steel-light)]">
             Supabase não configurado — copie .env.example para .env.local.
           </p>
         ) : null}

@@ -45,7 +45,7 @@ export function CharacterEditClient({ id }: { id: string }) {
           <Button variant="secondary" size="sm" onClick={() => void saveNow()} disabled={saving}>
             Salvar agora
           </Button>
-          {error && <span className="text-sm text-[var(--crimson)]">{error}</span>}
+          {error && <span className="text-base text-[var(--crimson)]">{error}</span>}
         </header>
 
         <div

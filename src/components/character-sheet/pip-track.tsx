@@ -21,7 +21,7 @@ export function PipTrackInput({
 }: PipTrackProps) {
   return (
     <div className={cn('space-y-1', className)}>
-      <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-[var(--steel-light)]">
+      <div className="flex items-center justify-between text-sm font-medium uppercase tracking-wide text-[var(--steel-light)]">
         <span>{label}</span>
         <span>
           {filled}/{max}

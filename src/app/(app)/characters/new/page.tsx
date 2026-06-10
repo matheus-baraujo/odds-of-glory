@@ -72,7 +72,7 @@ export default function NewCharacterPage() {
               <option value="3">Tier 3</option>
             </Select>
           </div>
-          {error && <p className="text-sm text-[var(--crimson)]">{error}</p>}
+          {error && <p className="text-base text-[var(--crimson)]">{error}</p>}
           <div className="flex gap-2 pt-2">
             <Button variant="outline" asChild>
               <Link href="/characters/">Cancelar</Link>

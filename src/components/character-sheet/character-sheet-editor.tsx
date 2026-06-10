@@ -52,9 +52,9 @@ export function CharacterSheetEditor({
           <h2 className="font-heading text-xl font-semibold text-[var(--ink)]">
             {sheet.bio.name || 'Sem nome'}
           </h2>
-          <p className="text-xs text-[var(--steel-light)]">Tier {sheet.tier}</p>
+          <p className="text-sm text-[var(--steel-light)]">Tier {sheet.tier}</p>
         </div>
-        <div className="text-xs text-[var(--steel-light)]">
+        <div className="text-sm text-[var(--steel-light)]">
           {saving ? 'Salvando…' : lastSaved ? `Salvo ${lastSaved.toLocaleTimeString()}` : ''}
         </div>
       </header>
@@ -312,7 +312,7 @@ export function CharacterSheetEditor({
           </div>
 
           <div>
-            <h3 className="mb-3 font-heading text-sm font-semibold uppercase tracking-wide text-[var(--gold)]">
+            <h3 className="mb-3 font-heading text-base font-semibold uppercase tracking-wide text-[var(--gold)]">
               Atitudes
             </h3>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -324,7 +324,7 @@ export function CharacterSheetEditor({
                     className="rounded-lg border border-[var(--parchment-deep)] bg-[var(--parchment-dark)]/50 p-3"
                   >
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="font-heading text-sm font-semibold">
+                      <span className="font-heading text-base font-semibold">
                         {approachLabel(key)}
                       </span>
                       <Input
@@ -389,7 +389,7 @@ export function CharacterSheetEditor({
             { title: 'Idiomas', items: languages, prefix: 'lang_' },
           ].map(({ title, items, prefix }) => (
             <div key={title}>
-              <h3 className="mb-2 font-heading text-sm font-semibold text-[var(--gold)]">
+              <h3 className="mb-2 font-heading text-base font-semibold text-[var(--gold)]">
                 {title}
               </h3>
               <div className="space-y-2">
@@ -401,7 +401,7 @@ export function CharacterSheetEditor({
                       key={opt.id}
                       className="flex flex-wrap items-center gap-3 rounded border border-[var(--parchment-deep)] px-3 py-2"
                     >
-                      <span className="min-w-[120px] text-sm font-medium">{opt.label}</span>
+                      <span className="min-w-[120px] text-base font-medium">{opt.label}</span>
                       <div className="flex items-center gap-1">
                         {[1, 2, 3].map((dot) => (
                           <button
@@ -428,7 +428,7 @@ export function CharacterSheetEditor({
                           />
                         ))}
                       </div>
-                      <label className="flex items-center gap-1 text-xs">
+                      <label className="flex items-center gap-1 text-base">
                         <input
                           type="checkbox"
                           checked={entry.edge ?? false}
@@ -739,7 +739,7 @@ export function CharacterSheetEditor({
             </Button>
           )}
           {sheet.supply.items.map((item, idx) => (
-            <label key={item.id} className="flex items-center gap-2 text-sm">
+            <label key={item.id} className="flex items-center gap-2 text-base">
               <input
                 type="checkbox"
                 checked={item.checked}

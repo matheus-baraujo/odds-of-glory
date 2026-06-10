@@ -1,26 +1,25 @@
 import type { Metadata } from 'next'
-import { Cinzel, Crimson_Pro } from 'next/font/google'
+import { Cinzel, Literata } from 'next/font/google'
 
 import { AuthProvider } from '@/features/auth/auth-provider'
 
 import './globals.css'
 
+const literata = Literata({
+  variable: '--font-literata',
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+})
+
 const cinzel = Cinzel({
   variable: '--font-cinzel',
   subsets: ['latin'],
-  weight: ['400', '600', '900'],
-})
-
-const crimsonPro = Crimson_Pro({
-  variable: '--font-crimson',
-  subsets: ['latin'],
-  weight: ['300', '400', '600'],
-  style: ['normal', 'italic'],
+  weight: ['400', '600', '700'],
 })
 
 export const metadata: Metadata = {
-  title: 'Odds of Glory — Fir Aesvold',
-  description: 'Mesa virtual para Fir Aesvold: fichas, salas e rolagens.',
+  title: 'Odds of Glory',
+  description: 'Mesa virtual: fichas, salas e rolagens.',
 }
 
 export default function RootLayout({
@@ -29,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" className={`${cinzel.variable} ${crimsonPro.variable} h-full antialiased`}>
+    <html lang="pt-BR" className={`${literata.variable} ${cinzel.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans">
         <AuthProvider>{children}</AuthProvider>
       </body>

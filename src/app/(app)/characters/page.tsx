@@ -47,7 +47,7 @@ export default function CharactersPage() {
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="font-heading text-2xl font-semibold text-[var(--ink)]">Fichas</h1>
-            <p className="text-sm text-[var(--steel-light)]">Gerencie seus personagens.</p>
+            <p className="text-base text-[var(--steel-light)]">Gerencie seus personagens.</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" asChild>
@@ -61,10 +61,10 @@ export default function CharactersPage() {
           </div>
         </header>
 
-        {error && <p className="mb-4 text-sm text-[var(--crimson)]">{error}</p>}
+        {error && <p className="mb-4 text-base text-[var(--crimson)]">{error}</p>}
 
         {loading ? (
-          <p className="text-sm text-[var(--steel-light)]">Carregando fichas…</p>
+          <p className="text-base text-[var(--steel-light)]">Carregando fichas…</p>
         ) : characters.length === 0 ? (
           <Card className="border-[var(--parchment-deep)] bg-[var(--parchment)]">
             <CardContent className="py-10 text-center">
@@ -84,7 +84,7 @@ export default function CharactersPage() {
                       <CardTitle className="font-heading text-lg text-[var(--ink)]">
                         {char.name}
                       </CardTitle>
-                      <p className="text-xs text-[var(--steel-light)]">
+                      <p className="text-sm text-[var(--steel-light)]">
                         Tier {char.tier} · Atualizado{' '}
                         {new Date(char.updated_at).toLocaleDateString()}
                       </p>

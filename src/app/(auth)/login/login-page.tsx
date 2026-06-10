@@ -62,10 +62,10 @@ export default function LoginPage() {
       <AuthShell title="Entrar" subtitle="Configure as variáveis de ambiente do Supabase para continuar.">
         <Alert variant="destructive">
           <AlertDescription>
-            Copie <code className="text-xs">.env.example</code> para{' '}
-            <code className="text-xs">.env.local</code> e preencha{' '}
-            <code className="text-xs">NEXT_PUBLIC_SUPABASE_URL</code> e{' '}
-            <code className="text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
+            Copie <code className="text-sm">.env.example</code> para{' '}
+            <code className="text-sm">.env.local</code> e preencha{' '}
+            <code className="text-sm">NEXT_PUBLIC_SUPABASE_URL</code> e{' '}
+            <code className="text-sm">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
           </AlertDescription>
         </Alert>
       </AuthShell>
@@ -75,7 +75,7 @@ export default function LoginPage() {
   return (
     <AuthShell
       title="Entrar"
-      subtitle="Acesse sua mesa de Fir Aesvold com email ou Google."
+      subtitle="Acesse sua mesa no Odds of Glory com email ou Google."
       footer={
         <p>
           Ainda não tem conta? <AuthLink href="/register/">Criar conta</AuthLink>
@@ -124,7 +124,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-[var(--parchment-deep)]" />
         </div>
-        <div className="relative flex justify-center text-xs uppercase tracking-wider">
+        <div className="relative flex justify-center text-sm uppercase tracking-wider">
           <span className="bg-[var(--parchment)] px-2 text-[var(--steel-light)]">ou</span>
         </div>
       </div>

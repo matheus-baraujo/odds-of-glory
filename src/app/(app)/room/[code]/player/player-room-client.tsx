@@ -105,13 +105,13 @@ export function PlayerRoomClient({ code }: { code: string }) {
           <h1 className="font-heading text-xl font-semibold text-[var(--ink)]">
             Escolha sua ficha
           </h1>
-          <p className="mt-2 text-sm text-[var(--steel-light)]">
+          <p className="mt-2 text-base text-[var(--steel-light)]">
             Sala {room.code} — {room.name}
           </p>
 
           {characters.length === 0 ? (
             <div className="mt-6 space-y-3">
-              <p className="text-sm text-[var(--steel-light)]">
+              <p className="text-base text-[var(--steel-light)]">
                 Você ainda não tem fichas. Crie uma antes de entrar na mesa.
               </p>
               <Button asChild>

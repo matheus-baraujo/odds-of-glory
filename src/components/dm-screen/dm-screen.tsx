@@ -25,7 +25,7 @@ function MarkdownBlock({ body }: { body: string }) {
       {body.split('\n').map((line, i) => {
         if (line.startsWith('|')) {
           return (
-            <span key={i} className="block font-mono text-xs">
+            <span key={i} className="block font-mono text-sm">
               {line}
             </span>
           )
@@ -81,7 +81,7 @@ export function DmScreen({
       <div className="flex h-full flex-col">
         <Button
           variant="outline"
-          className="mb-4 w-fit border-zinc-600 text-zinc-200"
+          className="mb-4 w-fit"
           onClick={() => {
             setViewCharacterId(null)
             setViewSheet(null)
@@ -109,7 +109,7 @@ export function DmScreen({
       <TabsContent value="reference" className="mt-4 flex-1 overflow-y-auto space-y-4">
         {rollBlocks.map((block) => (
           <div key={block.id} className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
-            <h3 className="mb-2 font-heading text-sm font-semibold text-amber-400">{block.title}</h3>
+            <h3 className="mb-2 font-heading text-base font-semibold text-amber-400">{block.title}</h3>
             <MarkdownBlock body={block.body} />
           </div>
         ))}
@@ -118,7 +118,7 @@ export function DmScreen({
       <TabsContent value="combat" className="mt-4 flex-1 overflow-y-auto space-y-4">
         {combatBlocks.map((block) => (
           <div key={block.id} className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
-            <h3 className="mb-2 font-heading text-sm font-semibold text-amber-400">{block.title}</h3>
+            <h3 className="mb-2 font-heading text-base font-semibold text-amber-400">{block.title}</h3>
             <MarkdownBlock body={block.body} />
           </div>
         ))}
@@ -127,7 +127,7 @@ export function DmScreen({
       <TabsContent value="resources" className="mt-4 flex-1 overflow-y-auto space-y-4">
         {resourceBlocks.map((block) => (
           <div key={block.id} className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
-            <h3 className="mb-2 font-heading text-sm font-semibold text-amber-400">{block.title}</h3>
+            <h3 className="mb-2 font-heading text-base font-semibold text-amber-400">{block.title}</h3>
             <MarkdownBlock body={block.body} />
           </div>
         ))}
@@ -135,7 +135,7 @@ export function DmScreen({
 
       <TabsContent value="session" className="mt-4 space-y-4">
         <div>
-          <label className="mb-1 block text-xs uppercase text-zinc-400">Heat</label>
+          <label className="mb-1 block text-sm uppercase text-zinc-400">Heat</label>
           <input
             type="number"
             min={0}
@@ -145,7 +145,7 @@ export function DmScreen({
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs uppercase text-zinc-400">Notas da sessão</label>
+          <label className="mb-1 block text-sm uppercase text-zinc-400">Notas da sessão</label>
           <Textarea
             value={notes}
             rows={8}
@@ -168,7 +168,7 @@ export function DmScreen({
                 <p className="font-medium text-zinc-100">
                   {p.profile?.display_name ?? 'Jogador'}
                 </p>
-                <p className="text-xs text-zinc-400">
+                <p className="text-sm text-zinc-400">
                   {p.character?.name ?? 'Sem ficha selecionada'}
                 </p>
               </div>
@@ -176,7 +176,6 @@ export function DmScreen({
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-zinc-600 text-zinc-200"
                   onClick={() => setViewCharacterId(p.character_id!)}
                 >
                   Ver ficha
@@ -185,7 +184,7 @@ export function DmScreen({
             </div>
           ))}
         {participants.filter((p) => p.session_role === 'player').length === 0 && (
-          <p className="text-sm text-zinc-400">Nenhum jogador na sala ainda.</p>
+          <p className="text-base text-zinc-400">Nenhum jogador na sala ainda.</p>
         )}
       </TabsContent>
     </Tabs>

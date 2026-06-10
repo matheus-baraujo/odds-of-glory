@@ -34,7 +34,7 @@ export function PlayerGameView({ room, characterId }: PlayerGameViewProps) {
         <div className="flex min-h-[calc(100vh-2rem)] flex-col rounded-xl border border-[var(--parchment-deep)] bg-[var(--parchment)] p-4 lg:p-6">
           <header className="mb-4 flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-widest text-[var(--gold)]">
+              <p className="text-sm uppercase tracking-widest text-[var(--gold)]">
                 {room.name} · {room.code}
               </p>
             </div>

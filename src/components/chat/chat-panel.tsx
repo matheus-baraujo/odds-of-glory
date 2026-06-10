@@ -50,17 +50,17 @@ export function ChatPanel({ messages, loading, onSend, currentUserId }: ChatPane
       data-testid="chat-panel"
     >
       <div className="border-b border-[var(--parchment-deep)] px-4 py-3">
-        <h3 className="font-heading text-sm font-semibold text-[var(--ink)]">Chat & Rolagens</h3>
-        <p className="text-xs text-[var(--steel-light)]">
+        <h3 className="font-heading text-base font-semibold text-[var(--ink)]">Chat & Rolagens</h3>
+        <p className="text-sm text-[var(--steel-light)]">
           Digite uma mensagem ou <code className="text-[var(--gold)]">/roll 4</code>
         </p>
       </div>
 
       <ScrollArea className="flex-1 px-4 py-3">
         {loading ? (
-          <p className="text-sm text-[var(--steel-light)]">Carregando mensagens…</p>
+          <p className="text-base text-[var(--steel-light)]">Carregando mensagens…</p>
         ) : messages.length === 0 ? (
-          <p className="text-sm text-[var(--steel-light)]">Nenhuma mensagem ainda.</p>
+          <p className="text-base text-[var(--steel-light)]">Nenhuma mensagem ainda.</p>
         ) : (
           <ul className="space-y-3">
             {messages.map((msg) => {
@@ -75,7 +75,7 @@ export function ChatPanel({ messages, loading, onSend, currentUserId }: ChatPane
               return (
                 <li
                   key={msg.id}
-                  className={`rounded-lg px-3 py-2 text-sm ${
+                  className={`rounded-lg px-3 py-2 text-base ${
                     isOwn ? 'bg-[var(--parchment-dark)]' : 'bg-white/40'
                   }`}
                 >
@@ -84,13 +84,13 @@ export function ChatPanel({ messages, loading, onSend, currentUserId }: ChatPane
                       {msg.author_name ?? 'Jogador'}
                     </span>
                     {msg.type === 'roll' && meta.outcome && <RollBadge outcome={meta.outcome} />}
-                    <span className="ml-auto text-[10px] text-[var(--steel-light)]">
+                    <span className="ml-auto text-sm text-[var(--steel-light)]">
                       {new Date(msg.created_at).toLocaleTimeString()}
                     </span>
                   </div>
                   <p className="text-[var(--steel)]">{msg.content}</p>
                   {msg.type === 'roll' && meta.dice && (
-                    <p className="mt-1 text-xs text-[var(--steel-light)]">
+                    <p className="mt-1 text-sm text-[var(--steel-light)]">
                       Dados: [{meta.dice.join(', ')}]
                       {meta.formula ? ` · ${meta.formula}` : ''}
                     </p>

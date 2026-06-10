@@ -28,7 +28,7 @@ function LobbyContent() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--parchment-dark)]">
-        <p className="text-sm text-[var(--steel-light)]" data-testid="lobby-loading">
+        <p className="text-base text-[var(--steel-light)]" data-testid="lobby-loading">
           Carregando…
         </p>
       </div>
@@ -93,7 +93,7 @@ function LobbyContent() {
                   onChange={(e) => setRoomName(e.target.value)}
                 />
               </div>
-              {error && <p className="text-sm text-[var(--crimson)]">{error}</p>}
+              {error && <p className="text-base text-[var(--crimson)]">{error}</p>}
               <Button
                 className="w-full"
                 disabled={busy}
@@ -136,7 +136,7 @@ function LobbyContent() {
                   onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 />
               </div>
-              {error && <p className="text-sm text-[var(--crimson)]">{error}</p>}
+              {error && <p className="text-base text-[var(--crimson)]">{error}</p>}
               <Button
                 className="w-full"
                 disabled={busy}
@@ -157,13 +157,13 @@ function LobbyContent() {
       <div className="mx-auto max-w-4xl">
         <header className="mb-10 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="font-heading text-xs uppercase tracking-[0.35em] text-[var(--gold)]">
+            <p className="font-heading text-sm uppercase tracking-[0.35em] text-[var(--gold)]">
               Odds of Glory
             </p>
             <h1 className="font-heading mt-2 text-3xl font-semibold text-[var(--ink)]">
               Lobby da Mesa
             </h1>
-            <p className="mt-1 text-sm text-[var(--steel-light)]">
+            <p className="mt-1 text-base text-[var(--steel-light)]">
               Olá, {displayName}. Escolha seu papel nesta sessão.
             </p>
           </div>

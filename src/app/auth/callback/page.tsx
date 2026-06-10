@@ -58,7 +58,7 @@ function AuthCallbackInner() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : (
-        <p className="text-center text-sm text-[var(--steel-light)]" data-testid="auth-callback-loading">
+        <p className="text-center text-base text-[var(--steel-light)]" data-testid="auth-callback-loading">
           Aguarde…
         </p>
       )}
@@ -71,7 +71,7 @@ export default function AuthCallbackPage() {
     <Suspense
       fallback={
         <AuthShell title="Autenticando" subtitle="Carregando…">
-          <p className="text-center text-sm text-[var(--steel-light)]">Aguarde…</p>
+          <p className="text-center text-base text-[var(--steel-light)]">Aguarde…</p>
         </AuthShell>
       }
     >

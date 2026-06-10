@@ -80,9 +80,9 @@ export function MasterRoomClient({ code }: { code: string }) {
       <div className="mx-auto max-w-6xl">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-widest text-amber-500">DM Screen</p>
+            <p className="text-sm uppercase tracking-widest text-amber-500">DM Screen</p>
             <h1 className="font-heading text-2xl font-semibold">{room.name}</h1>
-            <p className="text-sm text-zinc-400">
+            <p className="text-base text-zinc-400">
               Código:{' '}
               <span className="font-mono text-lg tracking-widest text-amber-300" data-testid="room-code">
                 {room.code}
@@ -91,7 +91,6 @@ export function MasterRoomClient({ code }: { code: string }) {
           </div>
           <Button
             variant="outline"
-            className="border-zinc-600 text-zinc-200"
             onClick={() => router.push('/lobby/')}
           >
             Lobby
