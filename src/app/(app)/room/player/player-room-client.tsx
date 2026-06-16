@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select } from '@/components/ui/select'
 import { useAuth } from '@/features/auth/auth-provider'
 import { useRequireAuth } from '@/features/auth/use-require-auth'
@@ -97,7 +98,9 @@ export function PlayerRoomClient() {
   if (authLoading || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--parchment-dark)]">
-        <p data-testid="player-room-loading">Carregando sala…</p>
+        <p className="text-[var(--steel-light)]" data-testid="player-room-loading">
+          Carregando sala…
+        </p>
       </div>
     )
   }
@@ -107,7 +110,9 @@ export function PlayerRoomClient() {
   if (error || !room) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--parchment-dark)]">
-        <p data-testid="player-room-error">{error ?? 'Sala não encontrada.'}</p>
+        <p className="text-[var(--crimson)]" data-testid="player-room-error">
+          {error ?? 'Sala não encontrada.'}
+        </p>
         <Button variant="outline" asChild>
           <Link href="/lobby/">Voltar ao lobby</Link>
         </Button>
@@ -117,50 +122,56 @@ export function PlayerRoomClient() {
 
   if (needsCharacter || !selectedCharacterId) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[var(--parchment-dark)] px-4">
-        <div className="w-full max-w-md rounded-xl border border-[var(--parchment-deep)] bg-[var(--parchment)] p-8">
-          <h1 className="font-heading text-xl font-semibold text-[var(--ink)]">
-            Escolha sua ficha
-          </h1>
-          <p className="mt-2 text-base text-[var(--steel-light)]">
-            Sala {room.code} — {room.name}
-          </p>
-
-          {characters.length === 0 ? (
-            <div className="mt-6 space-y-3">
-              <p className="text-base text-[var(--steel-light)]">
-                Você ainda não tem fichas. Crie uma antes de entrar na mesa.
-              </p>
-              <Button asChild>
-                <Link href="/characters/new/" data-testid="player-create-character">
-                  Criar ficha
-                </Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="mt-6 space-y-4">
-              <Select
-                data-testid="player-character-select"
-                value={selectedCharacterId ?? ''}
-                onChange={(e) => setSelectedCharacterId(e.target.value || null)}
-              >
-                <option value="">Selecione…</option>
-                {characters.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} (Tier {c.tier})
-                  </option>
-                ))}
-              </Select>
-              <Button
-                className="w-full"
-                disabled={!selectedCharacterId}
-                data-testid="player-confirm-character"
-                onClick={() => selectedCharacterId && void confirmCharacter(selectedCharacterId)}
-              >
-                Confirmar ficha
-              </Button>
-            </div>
-          )}
+      <div className="min-h-screen bg-[var(--parchment-dark)] px-4 py-10">
+        <div className="mx-auto max-w-md">
+          <Button variant="ghost" className="mb-6" asChild>
+            <Link href="/lobby/">← Lobby</Link>
+          </Button>
+          <Card className="border-[var(--parchment-deep)] bg-[var(--parchment)]">
+            <CardHeader>
+              <CardTitle className="font-heading">Escolha sua ficha</CardTitle>
+              <CardDescription>
+                Sala {room.code} — {room.name}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {characters.length === 0 ? (
+                <div className="space-y-3">
+                  <p className="text-base text-[var(--steel-light)]">
+                    Você ainda não tem fichas. Crie uma antes de entrar na mesa.
+                  </p>
+                  <Button asChild>
+                    <Link href="/characters/new/" data-testid="player-create-character">
+                      Criar ficha
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Select
+                    data-testid="player-character-select"
+                    value={selectedCharacterId ?? ''}
+                    onChange={(e) => setSelectedCharacterId(e.target.value || null)}
+                  >
+                    <option value="">Selecione…</option>
+                    {characters.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} (Tier {c.tier})
+                      </option>
+                    ))}
+                  </Select>
+                  <Button
+                    className="w-full"
+                    disabled={!selectedCharacterId}
+                    data-testid="player-confirm-character"
+                    onClick={() => selectedCharacterId && void confirmCharacter(selectedCharacterId)}
+                  >
+                    Confirmar ficha
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     )

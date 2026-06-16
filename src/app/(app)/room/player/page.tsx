@@ -7,7 +7,9 @@ export default function PlayerRoomPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-[var(--parchment-dark)]">
-          <p data-testid="player-room-loading">Carregando sala…</p>
+          <p className="text-[var(--steel-light)]" data-testid="player-room-loading">
+            Carregando sala…
+          </p>
         </div>
       }
     >

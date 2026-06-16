@@ -2,8 +2,14 @@
 
 import { useEffect, useState } from 'react'
 
+import {
+  adminTabsListClass,
+  adminTabsTriggerClass,
+} from '@/app/(admin)/[adminPath]/admin-tab-styles'
 import { CharacterSheetEditor } from '@/components/character-sheet/character-sheet-editor'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { useRuleBlocks } from '@/features/characters/use-game-options'
@@ -19,9 +25,12 @@ type DmScreenProps = {
   onSessionUpdate?: (state: Record<string, unknown>) => void
 }
 
+const blockCardClass =
+  'rounded-lg border border-[var(--parchment-deep)] bg-[var(--parchment-dark)]/30 p-4'
+
 function MarkdownBlock({ body }: { body: string }) {
   return (
-    <div className="prose prose-sm max-w-none whitespace-pre-wrap text-zinc-300">
+    <div className="prose prose-sm max-w-none whitespace-pre-wrap text-[var(--steel)]">
       {body.split('\n').map((line, i) => {
         if (line.startsWith('|')) {
           return (
@@ -72,7 +81,7 @@ export function DmScreen({
   if (viewCharacterId) {
     if (!viewSheet) {
       return (
-        <div className="flex h-full items-center justify-center text-zinc-400">
+        <div className="flex h-full items-center justify-center text-[var(--steel-light)]">
           Carregando ficha…
         </div>
       )
@@ -89,7 +98,7 @@ export function DmScreen({
         >
           ← Voltar ao DM Screen
         </Button>
-        <div className="flex-1 overflow-hidden rounded-xl border border-zinc-700 bg-[var(--parchment)] p-4 text-[var(--ink)]">
+        <div className="flex-1 overflow-hidden rounded-xl border border-[var(--parchment-deep)] bg-[var(--parchment)] p-4 text-[var(--ink)]">
           <CharacterSheetEditor sheet={viewSheet} onChange={() => {}} readOnly />
         </div>
       </div>
@@ -98,58 +107,79 @@ export function DmScreen({
 
   return (
     <Tabs defaultValue="reference" className="flex h-full flex-col">
-      <TabsList className="flex h-auto flex-wrap bg-zinc-800">
-        <TabsTrigger value="reference">Referência</TabsTrigger>
-        <TabsTrigger value="combat">Combate</TabsTrigger>
-        <TabsTrigger value="resources">Recursos</TabsTrigger>
-        <TabsTrigger value="session">Sessão</TabsTrigger>
-        <TabsTrigger value="players">Jogadores</TabsTrigger>
+      <TabsList className={adminTabsListClass}>
+        <TabsTrigger value="reference" className={adminTabsTriggerClass}>
+          Referência
+        </TabsTrigger>
+        <TabsTrigger value="combat" className={adminTabsTriggerClass}>
+          Combate
+        </TabsTrigger>
+        <TabsTrigger value="resources" className={adminTabsTriggerClass}>
+          Recursos
+        </TabsTrigger>
+        <TabsTrigger value="session" className={adminTabsTriggerClass}>
+          Sessão
+        </TabsTrigger>
+        <TabsTrigger value="players" className={adminTabsTriggerClass}>
+          Jogadores
+        </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="reference" className="mt-4 flex-1 overflow-y-auto space-y-4">
+      <TabsContent value="reference" className="mt-4 flex-1 space-y-4 overflow-y-auto">
         {rollBlocks.map((block) => (
-          <div key={block.id} className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
-            <h3 className="mb-2 font-heading text-base font-semibold text-amber-400">{block.title}</h3>
+          <div key={block.id} className={blockCardClass}>
+            <h3 className="mb-2 font-heading text-base font-semibold text-[var(--gold)]">
+              {block.title}
+            </h3>
             <MarkdownBlock body={block.body} />
           </div>
         ))}
       </TabsContent>
 
-      <TabsContent value="combat" className="mt-4 flex-1 overflow-y-auto space-y-4">
+      <TabsContent value="combat" className="mt-4 flex-1 space-y-4 overflow-y-auto">
         {combatBlocks.map((block) => (
-          <div key={block.id} className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
-            <h3 className="mb-2 font-heading text-base font-semibold text-amber-400">{block.title}</h3>
+          <div key={block.id} className={blockCardClass}>
+            <h3 className="mb-2 font-heading text-base font-semibold text-[var(--gold)]">
+              {block.title}
+            </h3>
             <MarkdownBlock body={block.body} />
           </div>
         ))}
       </TabsContent>
 
-      <TabsContent value="resources" className="mt-4 flex-1 overflow-y-auto space-y-4">
+      <TabsContent value="resources" className="mt-4 flex-1 space-y-4 overflow-y-auto">
         {resourceBlocks.map((block) => (
-          <div key={block.id} className="rounded-lg border border-zinc-700 bg-zinc-900/50 p-4">
-            <h3 className="mb-2 font-heading text-base font-semibold text-amber-400">{block.title}</h3>
+          <div key={block.id} className={blockCardClass}>
+            <h3 className="mb-2 font-heading text-base font-semibold text-[var(--gold)]">
+              {block.title}
+            </h3>
             <MarkdownBlock body={block.body} />
           </div>
         ))}
       </TabsContent>
 
       <TabsContent value="session" className="mt-4 space-y-4">
-        <div>
-          <label className="mb-1 block text-sm uppercase text-zinc-400">Heat</label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="session-heat" className="text-sm uppercase text-[var(--gold)]">
+            Heat
+          </Label>
+          <Input
+            id="session-heat"
             type="number"
             min={0}
             value={heat}
-            className="w-24 rounded border border-zinc-600 bg-zinc-900 px-2 py-1 text-zinc-100"
+            className="w-24"
             onChange={(e) => setHeat(Number(e.target.value))}
           />
         </div>
-        <div>
-          <label className="mb-1 block text-sm uppercase text-zinc-400">Notas da sessão</label>
+        <div className="space-y-2">
+          <Label htmlFor="session-notes" className="text-sm uppercase text-[var(--gold)]">
+            Notas da sessão
+          </Label>
           <Textarea
+            id="session-notes"
             value={notes}
             rows={8}
-            className="border-zinc-600 bg-zinc-900 text-zinc-100"
             onChange={(e) => setNotes(e.target.value)}
           />
         </div>
@@ -162,13 +192,13 @@ export function DmScreen({
           .map((p) => (
             <div
               key={p.user_id}
-              className="flex items-center justify-between rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3"
+              className="flex items-center justify-between rounded-lg border border-[var(--parchment-deep)] bg-[var(--parchment-dark)]/30 px-4 py-3"
             >
               <div>
-                <p className="font-medium text-zinc-100">
+                <p className="font-medium text-[var(--ink)]">
                   {p.profile?.display_name ?? 'Jogador'}
                 </p>
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-[var(--steel-light)]">
                   {p.character?.name ?? 'Sem ficha selecionada'}
                 </p>
               </div>
@@ -184,7 +214,7 @@ export function DmScreen({
             </div>
           ))}
         {participants.filter((p) => p.session_role === 'player').length === 0 && (
-          <p className="text-base text-zinc-400">Nenhum jogador na sala ainda.</p>
+          <p className="text-base text-[var(--steel-light)]">Nenhum jogador na sala ainda.</p>
         )}
       </TabsContent>
     </Tabs>

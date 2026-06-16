@@ -6,8 +6,10 @@ export default function MasterRoomPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-100">
-          <p data-testid="master-room-loading">Carregando sala…</p>
+        <div className="flex min-h-screen items-center justify-center bg-[var(--parchment-dark)]">
+          <p className="text-[var(--steel-light)]" data-testid="master-room-loading">
+            Carregando sala…
+          </p>
         </div>
       }
     >
