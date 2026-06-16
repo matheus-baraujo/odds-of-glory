@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { createCharacter } from '@/features/characters/api'
 import { useRequireAuth } from '@/features/auth/use-require-auth'
+import { characterEditPath } from '@/lib/paths'
 import type { CharacterTier } from '@/types/character-sheet'
 
 export default function NewCharacterPage() {
@@ -39,7 +40,7 @@ export default function NewCharacterPage() {
     setError(null)
     try {
       const char = await createCharacter(name.trim(), tier)
-      router.push(`/characters/${char.id}/`)
+      router.push(characterEditPath(char.id))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar ficha.')
       setCreating(false)

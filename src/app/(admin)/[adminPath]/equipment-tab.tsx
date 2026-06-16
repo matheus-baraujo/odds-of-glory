@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
+import { AbilitiesEditor } from '@/features/admin/abilities-editor'
 import { PaginatedTable } from '@/features/admin/paginated-table'
 import {
   deleteEquipment,
@@ -33,6 +34,8 @@ export function EquipmentTab({ equipment, onReload, onStatus }: EquipmentTabProp
       tags: editingEquip.tags ?? [],
       defense: editingEquip.defense ?? 0,
       wear_max: editingEquip.wear_max ?? 2,
+      charges: editingEquip.charges ?? 0,
+      range: editingEquip.range ?? '',
       abilities: editingEquip.abilities ?? [],
       published: editingEquip.published ?? true,
     })
@@ -55,6 +58,8 @@ export function EquipmentTab({ equipment, onReload, onStatus }: EquipmentTabProp
             tags: [],
             defense: 0,
             wear_max: 2,
+            charges: 0,
+            range: '',
             abilities: [],
             published: true,
           })
@@ -117,6 +122,28 @@ export function EquipmentTab({ equipment, onReload, onStatus }: EquipmentTabProp
                 }
               />
             </div>
+            <div>
+              <Label>Cargas</Label>
+              <Input
+                type="number"
+                value={editingEquip.charges ?? 0}
+                onChange={(e) =>
+                  setEditingEquip({
+                    ...editingEquip,
+                    charges: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div>
+              <Label>Alcance (range)</Label>
+              <Input
+                value={editingEquip.range ?? ''}
+                onChange={(e) =>
+                  setEditingEquip({ ...editingEquip, range: e.target.value })
+                }
+              />
+            </div>
           </div>
           <div>
             <Label>Tags (separadas por vírgula)</Label>
@@ -133,6 +160,10 @@ export function EquipmentTab({ equipment, onReload, onStatus }: EquipmentTabProp
               }
             />
           </div>
+          <AbilitiesEditor
+            abilities={editingEquip.abilities ?? []}
+            onChange={(abilities) => setEditingEquip({ ...editingEquip, abilities })}
+          />
           <label className="flex items-center gap-2 text-base">
             <input
               type="checkbox"
@@ -172,6 +203,14 @@ export function EquipmentTab({ equipment, onReload, onStatus }: EquipmentTabProp
           {
             header: 'Wear max',
             cell: (item) => item.wear_max,
+          },
+          {
+            header: 'Cargas',
+            cell: (item) => item.charges,
+          },
+          {
+            header: 'Alcance',
+            cell: (item) => item.range || '—',
           },
           {
             header: 'Tags',

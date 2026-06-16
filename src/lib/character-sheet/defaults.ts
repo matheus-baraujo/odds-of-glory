@@ -60,12 +60,14 @@ export function createDefaultSheetState(
     aspect: {
       templateId: null,
       customName: '',
+      description: '',
       oath: '',
+      drive: '',
       spells: [],
     },
     abilities: [],
     equipment: [],
-    supply: { load: 0, items: [] },
+    supply: { load: 0, checked: {} },
     economy: { coinsOnHand: 0, stash: 0 },
     circles: [],
     downtime: {

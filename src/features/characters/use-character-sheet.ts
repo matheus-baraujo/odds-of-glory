@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { characterSheetSchema } from '@/lib/character-sheet/schema'
+import { normalizeCharacterSheet } from '@/lib/character-sheet/normalize'
 import type { CharacterRow, CharacterSheet } from '@/types/character-sheet'
 
 import { getCharacter, updateCharacter } from './api'
@@ -31,9 +32,10 @@ export function useCharacterSheet(characterId: string) {
           setError('Ficha não encontrada.')
           return
         }
+        const normalized = normalizeCharacterSheet(row.sheet_state)
         setCharacter(row)
-        setSheet(row.sheet_state)
-        sheetRef.current = row.sheet_state
+        setSheet(normalized)
+        sheetRef.current = normalized
       })
       .catch((err) => {
         if (mounted) setError(err instanceof Error ? err.message : 'Erro ao carregar ficha.')

@@ -11,6 +11,7 @@ export const OPTION_CATEGORY_LABELS: Record<GameOptionCategory, string> = {
   tag: 'Tag',
   tier_stat: 'Estatística de tier',
   approach: 'Abordagem',
+  supply: 'Suprimento',
 }
 
 export const RULE_CATEGORIES = ['roll_results', 'resources', 'combat'] as const

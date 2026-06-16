@@ -22,3 +22,4 @@ export type GameOptionCategory =
   | 'tag'
   | 'tier_stat'
   | 'approach'
+  | 'supply'

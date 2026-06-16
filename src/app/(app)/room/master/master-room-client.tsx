@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { DmScreen } from '@/components/dm-screen/dm-screen'
@@ -16,8 +16,11 @@ import {
   type RoomParticipant,
 } from '@/features/rooms/api'
 
-export function MasterRoomClient({ code }: { code: string }) {
+export function MasterRoomClient() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const code = searchParams.get('code')?.toUpperCase() ?? null
+
   const { user } = useAuth()
   const { loading: authLoading, isAuthenticated } = useRequireAuth()
 
@@ -27,7 +30,7 @@ export function MasterRoomClient({ code }: { code: string }) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isAuthenticated || !user) return
+    if (!isAuthenticated || !user || !code) return
 
     void (async () => {
       try {
@@ -53,6 +56,17 @@ export function MasterRoomClient({ code }: { code: string }) {
       }
     })()
   }, [code, isAuthenticated, user])
+
+  if (!code) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-950 text-zinc-100">
+        <p data-testid="master-room-missing-code">Informe o código da sala na URL.</p>
+        <Button variant="outline" asChild>
+          <Link href="/lobby/">Voltar ao lobby</Link>
+        </Button>
+      </div>
+    )
+  }
 
   if (authLoading || loading) {
     return (
@@ -89,10 +103,7 @@ export function MasterRoomClient({ code }: { code: string }) {
               </span>
             </p>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => router.push('/lobby/')}
-          >
+          <Button variant="outline" onClick={() => router.push('/lobby/')}>
             Lobby
           </Button>
         </header>

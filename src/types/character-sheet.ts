@@ -48,44 +48,45 @@ export type SpellEntry = {
   id: string
   name: string
   type: 'active' | 'passive'
-  description?: string
+  description: string
+  cost?: string
 }
 
 export type AbilityEntry = {
   id: string
   name: string
   source: 'ancestry' | 'background' | 'career' | 'other'
+  sourceOptionId?: string
+  cost?: string
+  description: string
+}
+
+export type GearAbility = {
+  name: string
+  cost: string
   description: string
 }
 
 export type GearItem = {
   id: string
+  templateId?: string | null
   name: string
   tier: CharacterTier
   tags: string[]
   defense: number
   wear: number
   wearMax: number
-  abilities: { name: string; description: string }[]
-}
-
-export type SupplyItem = {
-  id: string
-  name: string
-  checked: boolean
-}
-
-export type CircleEntry = {
-  id: string
-  name: string
-  relationship: string
-  notes: string
+  charges?: number
+  range?: string
+  abilities: GearAbility[]
 }
 
 export type CharacterAspect = {
   templateId: string | null
   customName: string
+  description: string
   oath: string
+  drive: string
   spells: SpellEntry[]
 }
 
@@ -104,10 +105,17 @@ export type CharacterSheet = {
   aspect: CharacterAspect
   abilities: AbilityEntry[]
   equipment: GearItem[]
-  supply: { load: number; items: SupplyItem[] }
+  supply: { load: number; checked: Record<string, boolean> }
   economy: { coinsOnHand: number; stash: number }
   circles: CircleEntry[]
   downtime: { projectClock: boolean[]; notes: string }
+  notes: string
+}
+
+export type CircleEntry = {
+  id: string
+  name: string
+  relationship: string
   notes: string
 }
 

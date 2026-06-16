@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -15,12 +15,16 @@ import {
   setParticipantCharacter,
   type GameRoom,
 } from '@/features/rooms/api'
+import { roomMasterPath } from '@/lib/paths'
 import type { CharacterRow } from '@/types/character-sheet'
 
 import { PlayerGameView } from './player-game-view'
 
-export function PlayerRoomClient({ code }: { code: string }) {
+export function PlayerRoomClient() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const code = searchParams.get('code')?.toUpperCase() ?? null
+
   const { user } = useAuth()
   const { loading: authLoading, isAuthenticated } = useRequireAuth()
 
@@ -32,7 +36,7 @@ export function PlayerRoomClient({ code }: { code: string }) {
   const [needsCharacter, setNeedsCharacter] = useState(false)
 
   useEffect(() => {
-    if (!isAuthenticated || !user) return
+    if (!isAuthenticated || !user || !code) return
 
     void (async () => {
       try {
@@ -49,7 +53,7 @@ export function PlayerRoomClient({ code }: { code: string }) {
         }
 
         if (participant.session_role === 'master') {
-          router.replace(`/room/${code}/master/`)
+          router.replace(roomMasterPath(code))
           return
         }
 
@@ -75,6 +79,19 @@ export function PlayerRoomClient({ code }: { code: string }) {
     await setParticipantCharacter(room.id, characterId)
     setSelectedCharacterId(characterId)
     setNeedsCharacter(false)
+  }
+
+  if (!code) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--parchment-dark)]">
+        <p className="text-[var(--crimson)]" data-testid="player-room-missing-code">
+          Informe o código da sala na URL.
+        </p>
+        <Button variant="outline" asChild>
+          <Link href="/lobby/">Voltar ao lobby</Link>
+        </Button>
+      </div>
+    )
   }
 
   if (authLoading || loading) {

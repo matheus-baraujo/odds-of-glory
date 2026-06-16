@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { AbilitiesEditor } from '@/features/admin/abilities-editor'
 import {
   getOptionCategoryLabel,
   OPTION_CATEGORY_LABELS,
@@ -18,6 +19,8 @@ import {
   upsertGameOption,
   type AdminGameOption,
 } from '@/features/admin/api'
+import { parseIdentityData } from '@/lib/character-sheet/import-templates'
+import type { ContentAbility } from '@/types/game-content'
 import type { GameOptionCategory } from '@/types/database'
 
 import {
@@ -27,6 +30,7 @@ import {
 } from './admin-tab-styles'
 
 const OPTION_CATEGORIES = Object.keys(OPTION_CATEGORY_LABELS) as GameOptionCategory[]
+const IDENTITY_CATEGORIES: GameOptionCategory[] = ['ancestry', 'background', 'career']
 
 type OptionsTabProps = {
   options: AdminGameOption[]
@@ -34,9 +38,25 @@ type OptionsTabProps = {
   onStatus: (message: string) => void
 }
 
+function isIdentityCategory(category: GameOptionCategory): boolean {
+  return IDENTITY_CATEGORIES.includes(category)
+}
+
 export function OptionsTab({ options, onReload, onStatus }: OptionsTabProps) {
   const [activeCategory, setActiveCategory] = useState<GameOptionCategory>('ancestry')
   const [editingOption, setEditingOption] = useState<Partial<AdminGameOption> | null>(null)
+
+  const identityData = editingOption?.data
+    ? parseIdentityData(editingOption.data)
+    : { description: '', abilities: [] as ContentAbility[] }
+
+  const setIdentityData = (description: string, abilities: ContentAbility[]) => {
+    if (!editingOption) return
+    setEditingOption({
+      ...editingOption,
+      data: { description, abilities },
+    })
+  }
 
   const saveOption = async () => {
     if (!editingOption?.category || !editingOption.slug || !editingOption.label) return
@@ -60,11 +80,16 @@ export function OptionsTab({ options, onReload, onStatus }: OptionsTabProps) {
       category,
       slug: '',
       label: '',
-      data: {},
+      data: isIdentityCategory(category) ? { description: '', abilities: [] } : {},
       sort_order: 0,
       published: true,
     })
   }
+
+  const showJsonEditor =
+    editingOption &&
+    !isIdentityCategory(editingOption.category as GameOptionCategory) &&
+    editingOption.category !== 'supply'
 
   return (
     <div className="space-y-4">
@@ -121,24 +146,49 @@ export function OptionsTab({ options, onReload, onStatus }: OptionsTabProps) {
               />
             </div>
           </div>
-          <div>
-            <Label>Data (JSON)</Label>
-            <Textarea
-              rows={4}
-              value={JSON.stringify(editingOption.data ?? {}, null, 2)}
-              className="font-mono text-sm"
-              onChange={(e) => {
-                try {
-                  setEditingOption({
-                    ...editingOption,
-                    data: JSON.parse(e.target.value) as Record<string, unknown>,
-                  })
-                } catch {
-                  /* ignore parse while typing */
+
+          {isIdentityCategory(editingOption.category as GameOptionCategory) && (
+            <>
+              <div>
+                <Label>Descrição</Label>
+                <Textarea
+                  rows={2}
+                  value={identityData.description ?? ''}
+                  onChange={(e) =>
+                    setIdentityData(e.target.value, identityData.abilities ?? [])
+                  }
+                />
+              </div>
+              <AbilitiesEditor
+                abilities={identityData.abilities ?? []}
+                onChange={(abilities) =>
+                  setIdentityData(identityData.description ?? '', abilities)
                 }
-              }}
-            />
-          </div>
+              />
+            </>
+          )}
+
+          {showJsonEditor && (
+            <div>
+              <Label>Data (JSON)</Label>
+              <Textarea
+                rows={4}
+                value={JSON.stringify(editingOption.data ?? {}, null, 2)}
+                className="font-mono text-sm"
+                onChange={(e) => {
+                  try {
+                    setEditingOption({
+                      ...editingOption,
+                      data: JSON.parse(e.target.value) as Record<string, unknown>,
+                    })
+                  } catch {
+                    /* ignore parse while typing */
+                  }
+                }}
+              />
+            </div>
+          )}
+
           <label className="flex items-center gap-2 text-base">
             <input
               type="checkbox"
@@ -189,6 +239,15 @@ export function OptionsTab({ options, onReload, onStatus }: OptionsTabProps) {
                     header: 'Slug',
                     cell: (opt) => <span className="text-[var(--steel-light)]">{opt.slug}</span>,
                   },
+                  ...(isIdentityCategory(category)
+                    ? [
+                        {
+                          header: 'Habilidades',
+                          cell: (opt: AdminGameOption) =>
+                            parseIdentityData(opt.data).abilities?.length ?? 0,
+                        },
+                      ]
+                    : []),
                   {
                     header: 'Ordem',
                     cell: (opt) => opt.sort_order,

@@ -2,11 +2,12 @@
 
 import { createBrowserSupabaseClient } from '@/lib/supabase/client'
 import { createDefaultSheetState } from '@/lib/character-sheet/defaults'
+import { normalizeCharacterSheet } from '@/lib/character-sheet/normalize'
 import type { CharacterRow, CharacterSheet, CharacterTier } from '@/types/character-sheet'
 
 function parseSheetState(raw: unknown): CharacterSheet {
   if (raw && typeof raw === 'object' && Object.keys(raw as object).length > 0) {
-    return raw as CharacterSheet
+    return normalizeCharacterSheet(raw)
   }
   return createDefaultSheetState()
 }

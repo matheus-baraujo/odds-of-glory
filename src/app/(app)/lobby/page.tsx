@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { useAuth } from '@/features/auth/auth-provider'
 import { useRequireAuth } from '@/features/auth/use-require-auth'
 import { createRoom, joinRoom } from '@/features/rooms/api'
+import { roomMasterPath, roomPlayerPath } from '@/lib/paths'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 
@@ -45,7 +46,7 @@ function LobbyContent() {
     setError(null)
     try {
       const room = await createRoom(roomName.trim() || 'Nova sessão')
-      router.push(`/room/${room.code}/master/`)
+      router.push(roomMasterPath(room.code))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao criar sala.')
       setBusy(false)
@@ -62,7 +63,7 @@ function LobbyContent() {
     try {
       const room = await joinRoom(roomCode)
       const isMaster = room.master_id === user?.id
-      router.push(isMaster ? `/room/${room.code}/master/` : `/room/${room.code}/player/`)
+      router.push(isMaster ? roomMasterPath(room.code) : roomPlayerPath(room.code))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao entrar na sala.')
       setBusy(false)

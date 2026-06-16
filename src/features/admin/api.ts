@@ -1,5 +1,6 @@
 import { createBrowserSupabaseClient } from '@/lib/supabase/client'
 import type { GameOptionCategory } from '@/types/database'
+import type { AspectSpellTemplate, ContentAbility } from '@/types/game-content'
 
 export type AdminGameOption = {
   id: string
@@ -27,7 +28,20 @@ export type AdminEquipment = {
   tags: string[]
   defense: number
   wear_max: number
-  abilities: { name: string; description: string }[]
+  charges: number
+  range: string
+  abilities: ContentAbility[]
+  published: boolean
+}
+
+export type AdminAspect = {
+  id: string
+  name: string
+  aspect_type: 'oath' | 'pact' | 'miracle' | 'curse'
+  description: string
+  oath: string
+  drive: string | null
+  spells: AspectSpellTemplate[]
   published: boolean
 }
 
@@ -116,6 +130,8 @@ export async function upsertEquipment(
     tags: item.tags ?? [],
     defense: item.defense ?? 0,
     wear_max: item.wear_max ?? 2,
+    charges: item.charges ?? 0,
+    range: item.range ?? '',
     abilities: item.abilities ?? [],
     published: item.published ?? true,
   })
@@ -125,5 +141,35 @@ export async function upsertEquipment(
 export async function deleteEquipment(id: string): Promise<void> {
   const supabase = createBrowserSupabaseClient()
   const { error } = await supabase.from('equipment_templates').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function listAllAspects(): Promise<AdminAspect[]> {
+  const supabase = createBrowserSupabaseClient()
+  const { data, error } = await supabase.from('aspect_templates').select('*').order('name')
+  if (error) throw error
+  return (data ?? []) as AdminAspect[]
+}
+
+export async function upsertAspect(
+  aspect: Partial<AdminAspect> & { name: string; aspect_type: AdminAspect['aspect_type'] }
+): Promise<void> {
+  const supabase = createBrowserSupabaseClient()
+  const { error } = await supabase.from('aspect_templates').upsert({
+    id: aspect.id,
+    name: aspect.name,
+    aspect_type: aspect.aspect_type,
+    description: aspect.description ?? '',
+    oath: aspect.oath ?? '',
+    drive: aspect.drive ?? null,
+    spells: aspect.spells ?? [],
+    published: aspect.published ?? true,
+  })
+  if (error) throw error
+}
+
+export async function deleteAspect(id: string): Promise<void> {
+  const supabase = createBrowserSupabaseClient()
+  const { error } = await supabase.from('aspect_templates').delete().eq('id', id)
   if (error) throw error
 }

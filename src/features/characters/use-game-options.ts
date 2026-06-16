@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 
 import { createBrowserSupabaseClient } from '@/lib/supabase/client'
 import type { GameOptionCategory } from '@/types/database'
+import type { AspectTemplate, EquipmentTemplate } from '@/types/game-content'
+import { parseIdentityData } from '@/lib/character-sheet/import-templates'
 
 export type GameOption = {
   id: string
@@ -14,9 +16,18 @@ export type GameOption = {
   sort_order: number
 }
 
+export const GAME_CONTENT_ERROR_MESSAGE =
+  'Conteúdo do jogo indisponível. Tente recarregar a página.'
+
+function toErrorMessage(error: { message: string } | null): string | null {
+  if (!error) return null
+  return GAME_CONTENT_ERROR_MESSAGE
+}
+
 export function useGameOptions(categories?: GameOptionCategory[]) {
   const [options, setOptions] = useState<GameOption[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -32,9 +43,15 @@ export function useGameOptions(categories?: GameOptionCategory[]) {
       query = query.in('category', categories)
     }
 
-    void query.then(({ data, error }) => {
+    void query.then(({ data, error: queryError }) => {
       if (!mounted) return
-      if (!error && data) setOptions(data as GameOption[])
+      if (queryError) {
+        setError(toErrorMessage(queryError))
+        setOptions([])
+      } else {
+        setOptions((data ?? []) as GameOption[])
+        setError(null)
+      }
       setLoading(false)
     })
 
@@ -46,8 +63,10 @@ export function useGameOptions(categories?: GameOptionCategory[]) {
   const byCategory = (category: GameOptionCategory) =>
     options.filter((o) => o.category === category)
 
-  return { options, byCategory, loading }
+  return { options, byCategory, loading, error }
 }
+
+export { parseIdentityData }
 
 export function useRuleBlocks(category?: string) {
   const [blocks, setBlocks] = useState<
@@ -82,18 +101,9 @@ export function useRuleBlocks(category?: string) {
 }
 
 export function useEquipmentTemplates() {
-  const [templates, setTemplates] = useState<
-    {
-      id: string
-      name: string
-      tier: number
-      tags: string[]
-      defense: number
-      wear_max: number
-      abilities: { name: string; description: string }[]
-    }[]
-  >([])
+  const [templates, setTemplates] = useState<EquipmentTemplate[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -101,12 +111,18 @@ export function useEquipmentTemplates() {
 
     void supabase
       .from('equipment_templates')
-      .select('id, name, tier, tags, defense, wear_max, abilities')
+      .select('id, name, tier, tags, defense, wear_max, charges, range, abilities')
       .eq('published', true)
       .order('name')
-      .then(({ data, error }) => {
+      .then(({ data, error: queryError }) => {
         if (!mounted) return
-        if (!error && data) setTemplates(data as typeof templates)
+        if (queryError) {
+          setError(toErrorMessage(queryError))
+          setTemplates([])
+        } else {
+          setTemplates((data ?? []) as EquipmentTemplate[])
+          setError(null)
+        }
         setLoading(false)
       })
 
@@ -115,5 +131,39 @@ export function useEquipmentTemplates() {
     }
   }, [])
 
-  return { templates, loading }
+  return { templates, loading, error }
+}
+
+export function useAspectTemplates() {
+  const [templates, setTemplates] = useState<AspectTemplate[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    const supabase = createBrowserSupabaseClient()
+
+    void supabase
+      .from('aspect_templates')
+      .select('id, name, aspect_type, description, oath, drive, spells')
+      .eq('published', true)
+      .order('name')
+      .then(({ data, error: queryError }) => {
+        if (!mounted) return
+        if (queryError) {
+          setError(toErrorMessage(queryError))
+          setTemplates([])
+        } else {
+          setTemplates((data ?? []) as AspectTemplate[])
+          setError(null)
+        }
+        setLoading(false)
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  return { templates, loading, error }
 }

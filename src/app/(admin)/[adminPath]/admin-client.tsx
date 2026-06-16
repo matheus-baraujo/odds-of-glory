@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
+  listAllAspects,
   listAllEquipment,
   listAllGameOptions,
   listAllRuleBlocks,
+  type AdminAspect,
   type AdminEquipment,
   type AdminGameOption,
   type AdminRuleBlock,
@@ -14,6 +16,7 @@ import {
 import { useRequireAuth } from '@/features/auth/use-require-auth'
 
 import { adminTabsListClass, adminTabsTriggerClass } from './admin-tab-styles'
+import { AspectsTab } from './aspects-tab'
 import { EquipmentTab } from './equipment-tab'
 import { OptionsTab } from './options-tab'
 import { RulesTab } from './rules-tab'
@@ -25,17 +28,20 @@ export function AdminClient() {
   const [options, setOptions] = useState<AdminGameOption[]>([])
   const [rules, setRules] = useState<AdminRuleBlock[]>([])
   const [equipment, setEquipment] = useState<AdminEquipment[]>([])
+  const [aspects, setAspects] = useState<AdminAspect[]>([])
   const [status, setStatus] = useState<string | null>(null)
 
   const reload = async () => {
-    const [o, r, e] = await Promise.all([
+    const [o, r, e, a] = await Promise.all([
       listAllGameOptions(),
       listAllRuleBlocks(),
       listAllEquipment(),
+      listAllAspects(),
     ])
     setOptions(o)
     setRules(r)
     setEquipment(e)
+    setAspects(a)
   }
 
   useEffect(() => {
@@ -88,6 +94,9 @@ export function AdminClient() {
             <TabsTrigger className={adminTabsTriggerClass} value="equipment">
               Equipamentos
             </TabsTrigger>
+            <TabsTrigger className={adminTabsTriggerClass} value="aspects">
+              Aspects
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="options">
@@ -108,6 +117,10 @@ export function AdminClient() {
               onReload={reload}
               onStatus={setStatus}
             />
+          </TabsContent>
+
+          <TabsContent value="aspects">
+            <AspectsTab aspects={aspects} onReload={reload} onStatus={setStatus} />
           </TabsContent>
         </Tabs>
       </div>

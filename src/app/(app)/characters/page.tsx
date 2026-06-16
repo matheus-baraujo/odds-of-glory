@@ -4,18 +4,29 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
+import { CharacterSheetSummary } from '@/components/character-sheet/character-sheet-summary'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { deleteCharacter, listCharacters } from '@/features/characters/api'
+import { useGameOptions } from '@/features/characters/use-game-options'
 import { useRequireAuth } from '@/features/auth/use-require-auth'
+import { characterEditPath } from '@/lib/paths'
 import type { CharacterRow } from '@/types/character-sheet'
 
 export default function CharactersPage() {
   const router = useRouter()
   const { loading: authLoading, isAuthenticated } = useRequireAuth()
+  const { options } = useGameOptions()
   const [characters, setCharacters] = useState<CharacterRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [previewChar, setPreviewChar] = useState<CharacterRow | null>(null)
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -89,11 +100,19 @@ export default function CharactersPage() {
                         {new Date(char.updated_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        data-testid={`character-preview-${char.id}`}
+                        onClick={() => setPreviewChar(char)}
+                      >
+                        Visualizar
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/characters/${char.id}/`)}
+                        onClick={() => router.push(characterEditPath(char.id))}
                         data-testid={`character-edit-${char.id}`}
                       >
                         Editar
@@ -113,6 +132,17 @@ export default function CharactersPage() {
           </ul>
         )}
       </div>
+
+      <Dialog open={previewChar !== null} onOpenChange={(open) => !open && setPreviewChar(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{previewChar?.name ?? 'Ficha'}</DialogTitle>
+          </DialogHeader>
+          {previewChar && (
+            <CharacterSheetSummary sheet={previewChar.sheet_state} gameOptions={options} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

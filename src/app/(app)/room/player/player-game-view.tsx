@@ -45,6 +45,7 @@ export function PlayerGameView({ room, characterId }: PlayerGameViewProps) {
           <CharacterSheetEditor
             sheet={sheet}
             onChange={updateSheet}
+            mode="play"
             saving={saving}
             lastSaved={lastSaved}
           />

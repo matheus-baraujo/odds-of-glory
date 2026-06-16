@@ -1,21 +1,37 @@
 'use client'
 
+import { useEffect } from 'react'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useGameOptions } from '@/features/characters/use-game-options'
 import { newId } from '@/lib/character-sheet/defaults'
+import {
+  needsAbilitySync,
+  syncAbilitiesFromIdentity,
+} from '@/lib/character-sheet/import-templates'
 import type { CharacterSheet, CharacterTier } from '@/types/character-sheet'
 import { APPROACH_KEYS } from '@/types/character-sheet'
 
+import { AbilitiesSection } from './abilities-section'
+import { AspectSection } from './aspect-section'
+import { CharacterSheetSummary } from './character-sheet-summary'
+import { EquipmentSection } from './equipment-section'
 import { PipTrackInput } from './pip-track'
+import { SupplySection } from './supply-section'
+
+export type CharacterSheetEditorMode = 'build' | 'play'
 
 type CharacterSheetEditorProps = {
   sheet: CharacterSheet
   onChange: (updater: (prev: CharacterSheet) => CharacterSheet) => void
+  mode?: CharacterSheetEditorMode
+  showSummary?: boolean
   readOnly?: boolean
   saving?: boolean
   lastSaved?: Date | null
@@ -24,11 +40,15 @@ type CharacterSheetEditorProps = {
 export function CharacterSheetEditor({
   sheet,
   onChange,
+  mode = 'build',
+  showSummary = false,
   readOnly = false,
   saving,
   lastSaved,
 }: CharacterSheetEditorProps) {
-  const { byCategory, loading } = useGameOptions()
+  const { options, byCategory, loading, error: optionsError } = useGameOptions()
+  const isPlayMode = mode === 'play'
+  const buildLocked = readOnly || isPlayMode
 
   const approaches = byCategory('approach')
   const skills = byCategory('skill')
@@ -37,12 +57,59 @@ export function CharacterSheetEditor({
   const ancestries = byCategory('ancestry')
   const backgrounds = byCategory('background')
   const careers = byCategory('career')
+  const supplies = byCategory('supply')
 
   const approachLabel = (slug: string) =>
     approaches.find((a) => a.slug === slug)?.label ?? slug
 
+  useEffect(() => {
+    if (loading || readOnly) return
+
+    const ancestry = ancestries.find((o) => o.id === sheet.bio.ancestryId)
+    const background = backgrounds.find((o) => o.id === sheet.bio.backgroundId)
+    const career = careers.find((o) => o.id === sheet.bio.careerId)
+
+    if (!needsAbilitySync(sheet, ancestry, background, career)) return
+
+    onChange((p) => ({
+      ...p,
+      abilities: syncAbilitiesFromIdentity(p, ancestry, background, career),
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync when identity options load or bio IDs change
+  }, [
+    loading,
+    readOnly,
+    sheet.bio.ancestryId,
+    sheet.bio.backgroundId,
+    sheet.bio.careerId,
+    sheet.abilities.length,
+    options.length,
+  ])
+
   const setTier = (tier: CharacterTier) => {
     onChange((prev) => ({ ...prev, tier }))
+  }
+
+  const updateIdentity = (
+    field: 'ancestryId' | 'backgroundId' | 'careerId',
+    value: string | null
+  ) => {
+    onChange((p) => {
+      const bio = { ...p.bio, [field]: value }
+      const ancestry = ancestries.find((o) => o.id === bio.ancestryId)
+      const background = backgrounds.find((o) => o.id === bio.backgroundId)
+      const career = careers.find((o) => o.id === bio.careerId)
+      return {
+        ...p,
+        bio,
+        abilities: syncAbilitiesFromIdentity(
+          { ...p, bio },
+          ancestry,
+          background,
+          career
+        ),
+      }
+    })
   }
 
   return (
@@ -59,15 +126,48 @@ export function CharacterSheetEditor({
         </div>
       </header>
 
-      <Tabs defaultValue="identity" className="flex min-h-0 flex-1 flex-col">
+      {optionsError && (
+        <Alert variant="destructive" className="mb-4" data-testid="game-options-error">
+          <AlertDescription>{optionsError}</AlertDescription>
+        </Alert>
+      )}
+
+      {showSummary && !readOnly && (
+        <div className="mb-4">
+          <CharacterSheetSummary sheet={sheet} gameOptions={options} />
+        </div>
+      )}
+
+      {isPlayMode && !readOnly && (
+        <div className="mb-4 rounded-lg border border-[var(--parchment-deep)] bg-[var(--parchment-dark)]/30 p-4">
+          <h3 className="mb-3 font-heading text-sm font-semibold uppercase tracking-wide text-[var(--gold)]">
+            Suprimentos em jogo
+          </h3>
+          <SupplySection
+            sheet={sheet}
+            supplies={supplies}
+            catalogError={optionsError}
+            supplyEditable
+            economyReadOnly
+            compact
+            onChange={onChange}
+          />
+        </div>
+      )}
+
+      <Tabs
+        key={mode}
+        defaultValue={isPlayMode ? 'core' : 'identity'}
+        className="flex min-h-0 flex-1 flex-col"
+      >
         <TabsList className="flex h-auto flex-wrap gap-1 bg-[var(--parchment-dark)] p-1">
-          <TabsTrigger value="identity">Identidade</TabsTrigger>
+          {!isPlayMode && <TabsTrigger value="identity">Identidade</TabsTrigger>}
           <TabsTrigger value="core">Atitudes & Core</TabsTrigger>
-          <TabsTrigger value="skills">Perícias</TabsTrigger>
-          <TabsTrigger value="aspect">Aspect & Spells</TabsTrigger>
+          {!isPlayMode && <TabsTrigger value="skills">Perícias</TabsTrigger>}
+          {!isPlayMode && <TabsTrigger value="aspect">Aspect & Spells</TabsTrigger>}
           <TabsTrigger value="abilities">Habilidades</TabsTrigger>
           <TabsTrigger value="equipment">Equipamento</TabsTrigger>
-          <TabsTrigger value="supply">Suprimentos</TabsTrigger>
+          {!isPlayMode && <TabsTrigger value="supply">Suprimentos</TabsTrigger>}
           <TabsTrigger value="social">Social & Downtime</TabsTrigger>
         </TabsList>
 
@@ -79,7 +179,7 @@ export function CharacterSheetEditor({
                 id="char-name"
                 data-testid="sheet-name"
                 value={sheet.bio.name}
-                readOnly={readOnly}
+                readOnly={buildLocked}
                 onChange={(e) =>
                   onChange((p) => ({ ...p, bio: { ...p.bio, name: e.target.value } }))
                 }
@@ -104,7 +204,7 @@ export function CharacterSheetEditor({
             <Textarea
               id="char-appearance"
               value={sheet.bio.appearance}
-              readOnly={readOnly}
+              readOnly={buildLocked}
               rows={3}
               onChange={(e) =>
                 onChange((p) => ({ ...p, bio: { ...p.bio, appearance: e.target.value } }))
@@ -118,12 +218,8 @@ export function CharacterSheetEditor({
                 id="char-ancestry"
                 value={sheet.bio.ancestryId ?? ''}
                 disabled={readOnly || loading}
-                onChange={(e) =>
-                  onChange((p) => ({
-                    ...p,
-                    bio: { ...p.bio, ancestryId: e.target.value || null },
-                  }))
-                }
+                data-testid="char-ancestry"
+                onChange={(e) => updateIdentity('ancestryId', e.target.value || null)}
               >
                 <option value="">—</option>
                 {ancestries.map((o) => (
@@ -139,12 +235,8 @@ export function CharacterSheetEditor({
                 id="char-background"
                 value={sheet.bio.backgroundId ?? ''}
                 disabled={readOnly || loading}
-                onChange={(e) =>
-                  onChange((p) => ({
-                    ...p,
-                    bio: { ...p.bio, backgroundId: e.target.value || null },
-                  }))
-                }
+                data-testid="char-background"
+                onChange={(e) => updateIdentity('backgroundId', e.target.value || null)}
               >
                 <option value="">—</option>
                 {backgrounds.map((o) => (
@@ -160,12 +252,8 @@ export function CharacterSheetEditor({
                 id="char-career"
                 value={sheet.bio.careerId ?? ''}
                 disabled={readOnly || loading}
-                onChange={(e) =>
-                  onChange((p) => ({
-                    ...p,
-                    bio: { ...p.bio, careerId: e.target.value || null },
-                  }))
-                }
+                data-testid="char-career"
+                onChange={(e) => updateIdentity('careerId', e.target.value || null)}
               >
                 <option value="">—</option>
                 {careers.map((o) => (
@@ -182,7 +270,7 @@ export function CharacterSheetEditor({
               <Input
                 id="char-size"
                 value={sheet.bio.size}
-                readOnly={readOnly}
+                readOnly={buildLocked}
                 onChange={(e) =>
                   onChange((p) => ({ ...p, bio: { ...p.bio, size: e.target.value } }))
                 }
@@ -193,7 +281,7 @@ export function CharacterSheetEditor({
               <Input
                 id="char-movement"
                 value={sheet.bio.movement}
-                readOnly={readOnly}
+                readOnly={buildLocked}
                 onChange={(e) =>
                   onChange((p) => ({ ...p, bio: { ...p.bio, movement: e.target.value } }))
                 }
@@ -261,7 +349,7 @@ export function CharacterSheetEditor({
                 type="number"
                 min={0}
                 value={sheet.core.saves.mental}
-                readOnly={readOnly}
+                readOnly={buildLocked}
                 onChange={(e) =>
                   onChange((p) => ({
                     ...p,
@@ -279,7 +367,7 @@ export function CharacterSheetEditor({
                 type="number"
                 min={0}
                 value={sheet.core.saves.physical}
-                readOnly={readOnly}
+                readOnly={buildLocked}
                 onChange={(e) =>
                   onChange((p) => ({
                     ...p,
@@ -297,7 +385,7 @@ export function CharacterSheetEditor({
                 type="number"
                 min={0}
                 value={sheet.core.mana.current}
-                readOnly={readOnly}
+                readOnly={buildLocked}
                 onChange={(e) =>
                   onChange((p) => ({
                     ...p,
@@ -333,7 +421,7 @@ export function CharacterSheetEditor({
                         max={3}
                         className="h-7 w-14 text-center"
                         value={entry.value}
-                        readOnly={readOnly}
+                        readOnly={buildLocked}
                         onChange={(e) =>
                           onChange((p) => ({
                             ...p,
@@ -453,319 +541,35 @@ export function CharacterSheetEditor({
           ))}
         </TabsContent>
 
-        <TabsContent value="aspect" className="mt-4 space-y-4 overflow-y-auto">
-          <div className="space-y-1">
-            <Label>Aspecto</Label>
-            <Input
-              value={sheet.aspect.customName}
-              readOnly={readOnly}
-              onChange={(e) =>
-                onChange((p) => ({
-                  ...p,
-                  aspect: { ...p.aspect, customName: e.target.value },
-                }))
-              }
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>Oath / Drive</Label>
-            <Textarea
-              value={sheet.aspect.oath}
-              readOnly={readOnly}
-              rows={3}
-              onChange={(e) =>
-                onChange((p) => ({
-                  ...p,
-                  aspect: { ...p.aspect, oath: e.target.value },
-                }))
-              }
-            />
-          </div>
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <Label>Spells</Label>
-              {!readOnly && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    onChange((p) => ({
-                      ...p,
-                      aspect: {
-                        ...p.aspect,
-                        spells: [
-                          ...p.aspect.spells,
-                          { id: newId(), name: 'Novo spell', type: 'active' },
-                        ],
-                      },
-                    }))
-                  }
-                >
-                  + Spell
-                </Button>
-              )}
-            </div>
-            <div className="space-y-2">
-              {sheet.aspect.spells.map((spell, idx) => (
-                <div
-                  key={spell.id}
-                  className="grid gap-2 rounded border border-[var(--parchment-deep)] p-3 sm:grid-cols-[1fr_auto]"
-                >
-                  <Input
-                    value={spell.name}
-                    readOnly={readOnly}
-                    onChange={(e) =>
-                      onChange((p) => {
-                        const spells = [...p.aspect.spells]
-                        spells[idx] = { ...spell, name: e.target.value }
-                        return { ...p, aspect: { ...p.aspect, spells } }
-                      })
-                    }
-                  />
-                  <Select
-                    value={spell.type}
-                    disabled={readOnly}
-                    onChange={(e) =>
-                      onChange((p) => {
-                        const spells = [...p.aspect.spells]
-                        spells[idx] = {
-                          ...spell,
-                          type: e.target.value as 'active' | 'passive',
-                        }
-                        return { ...p, aspect: { ...p.aspect, spells } }
-                      })
-                    }
-                  >
-                    <option value="active">Active</option>
-                    <option value="passive">Passive</option>
-                  </Select>
-                </div>
-              ))}
-            </div>
-          </div>
+        <TabsContent value="aspect" className="mt-4 overflow-y-auto">
+          <AspectSection aspect={sheet.aspect} readOnly={buildLocked} onChange={onChange} />
         </TabsContent>
 
-        <TabsContent value="abilities" className="mt-4 space-y-4 overflow-y-auto">
-          {!readOnly && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                onChange((p) => ({
-                  ...p,
-                  abilities: [
-                    ...p.abilities,
-                    {
-                      id: newId(),
-                      name: 'Nova habilidade',
-                      source: 'other',
-                      description: '',
-                    },
-                  ],
-                }))
-              }
-            >
-              + Habilidade
-            </Button>
-          )}
-          {sheet.abilities.map((ability, idx) => (
-            <div key={ability.id} className="space-y-2 rounded border border-[var(--parchment-deep)] p-3">
-              <Input
-                value={ability.name}
-                readOnly={readOnly}
-                onChange={(e) =>
-                  onChange((p) => {
-                    const abilities = [...p.abilities]
-                    abilities[idx] = { ...ability, name: e.target.value }
-                    return { ...p, abilities }
-                  })
-                }
-              />
-              <Textarea
-                value={ability.description}
-                readOnly={readOnly}
-                rows={2}
-                onChange={(e) =>
-                  onChange((p) => {
-                    const abilities = [...p.abilities]
-                    abilities[idx] = { ...ability, description: e.target.value }
-                    return { ...p, abilities }
-                  })
-                }
-              />
-            </div>
-          ))}
+        <TabsContent value="abilities" className="mt-4 overflow-y-auto">
+          <AbilitiesSection
+            abilities={sheet.abilities}
+            readOnly={readOnly || isPlayMode}
+            onChange={onChange}
+          />
         </TabsContent>
 
-        <TabsContent value="equipment" className="mt-4 space-y-4 overflow-y-auto">
-          {!readOnly && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                onChange((p) => ({
-                  ...p,
-                  equipment: [
-                    ...p.equipment,
-                    {
-                      id: newId(),
-                      name: 'Novo item',
-                      tier: p.tier,
-                      tags: [],
-                      defense: 0,
-                      wear: 0,
-                      wearMax: 2,
-                      abilities: [],
-                    },
-                  ],
-                }))
-              }
-            >
-              + Equipamento
-            </Button>
-          )}
-          {sheet.equipment.map((item, idx) => (
-            <div key={item.id} className="space-y-2 rounded border border-[var(--parchment-deep)] p-3">
-              <Input
-                value={item.name}
-                readOnly={readOnly}
-                onChange={(e) =>
-                  onChange((p) => {
-                    const equipment = [...p.equipment]
-                    equipment[idx] = { ...item, name: e.target.value }
-                    return { ...p, equipment }
-                  })
-                }
-              />
-              <div className="grid gap-2 sm:grid-cols-3">
-                <Input
-                  type="number"
-                  min={0}
-                  placeholder="Defesa"
-                  value={item.defense}
-                  readOnly={readOnly}
-                  onChange={(e) =>
-                    onChange((p) => {
-                      const equipment = [...p.equipment]
-                      equipment[idx] = { ...item, defense: Number(e.target.value) }
-                      return { ...p, equipment }
-                    })
-                  }
-                />
-                <PipTrackInput
-                  label="Wear"
-                  filled={item.wear}
-                  max={item.wearMax}
-                  readOnly={readOnly}
-                  onChange={(wear) =>
-                    onChange((p) => {
-                      const equipment = [...p.equipment]
-                      equipment[idx] = { ...item, wear }
-                      return { ...p, equipment }
-                    })
-                  }
-                />
-              </div>
-            </div>
-          ))}
+        <TabsContent value="equipment" className="mt-4 overflow-y-auto">
+          <EquipmentSection
+            sheet={sheet}
+            readOnly={readOnly}
+            playMode={isPlayMode}
+            onChange={onChange}
+          />
         </TabsContent>
 
-        <TabsContent value="supply" className="mt-4 space-y-4 overflow-y-auto">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-1">
-              <Label>Load</Label>
-              <Input
-                type="number"
-                min={0}
-                value={sheet.supply.load}
-                readOnly={readOnly}
-                onChange={(e) =>
-                  onChange((p) => ({
-                    ...p,
-                    supply: { ...p.supply, load: Number(e.target.value) },
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Moedas</Label>
-              <Input
-                type="number"
-                min={0}
-                value={sheet.economy.coinsOnHand}
-                readOnly={readOnly}
-                onChange={(e) =>
-                  onChange((p) => ({
-                    ...p,
-                    economy: { ...p.economy, coinsOnHand: Number(e.target.value) },
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Stash</Label>
-              <Input
-                type="number"
-                min={0}
-                value={sheet.economy.stash}
-                readOnly={readOnly}
-                onChange={(e) =>
-                  onChange((p) => ({
-                    ...p,
-                    economy: { ...p.economy, stash: Number(e.target.value) },
-                  }))
-                }
-              />
-            </div>
-          </div>
-          {!readOnly && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                onChange((p) => ({
-                  ...p,
-                  supply: {
-                    ...p.supply,
-                    items: [
-                      ...p.supply.items,
-                      { id: newId(), name: 'Item', checked: false },
-                    ],
-                  },
-                }))
-              }
-            >
-              + Suprimento
-            </Button>
-          )}
-          {sheet.supply.items.map((item, idx) => (
-            <label key={item.id} className="flex items-center gap-2 text-base">
-              <input
-                type="checkbox"
-                checked={item.checked}
-                disabled={readOnly}
-                onChange={(e) =>
-                  onChange((p) => {
-                    const items = [...p.supply.items]
-                    items[idx] = { ...item, checked: e.target.checked }
-                    return { ...p, supply: { ...p.supply, items } }
-                  })
-                }
-              />
-              <Input
-                value={item.name}
-                readOnly={readOnly}
-                className="h-7"
-                onChange={(e) =>
-                  onChange((p) => {
-                    const items = [...p.supply.items]
-                    items[idx] = { ...item, name: e.target.value }
-                    return { ...p, supply: { ...p.supply, items } }
-                  })
-                }
-              />
-            </label>
-          ))}
+        <TabsContent value="supply" className="mt-4 overflow-y-auto">
+          <SupplySection
+            sheet={sheet}
+            supplies={supplies}
+            catalogError={optionsError}
+            readOnly={readOnly}
+            onChange={onChange}
+          />
         </TabsContent>
 
         <TabsContent value="social" className="mt-4 space-y-4 overflow-y-auto">
@@ -805,7 +609,7 @@ export function CharacterSheetEditor({
             <div key={circle.id} className="space-y-2 rounded border border-[var(--parchment-deep)] p-3">
               <Input
                 value={circle.name}
-                readOnly={readOnly}
+                readOnly={buildLocked}
                 placeholder="Nome"
                 onChange={(e) =>
                   onChange((p) => {
@@ -817,7 +621,7 @@ export function CharacterSheetEditor({
               />
               <Input
                 value={circle.relationship}
-                readOnly={readOnly}
+                readOnly={buildLocked}
                 placeholder="Relacionamento"
                 onChange={(e) =>
                   onChange((p) => {

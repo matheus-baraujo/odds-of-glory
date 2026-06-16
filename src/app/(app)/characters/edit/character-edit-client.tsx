@@ -1,16 +1,33 @@
 'use client'
 
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 import { CharacterSheetEditor } from '@/components/character-sheet/character-sheet-editor'
 import { Button } from '@/components/ui/button'
 import { useCharacterSheet } from '@/features/characters/use-character-sheet'
 import { useRequireAuth } from '@/features/auth/use-require-auth'
 
-export function CharacterEditClient({ id }: { id: string }) {
+export function CharacterEditClient() {
+  const searchParams = useSearchParams()
+  const id = searchParams.get('id')
+
   const { loading: authLoading, isAuthenticated } = useRequireAuth()
   const { sheet, loading, saving, error, lastSaved, updateSheet, saveNow } =
-    useCharacterSheet(id)
+    useCharacterSheet(id ?? 'none')
+
+  if (!id) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--parchment-dark)]">
+        <p className="text-[var(--crimson)]" data-testid="character-edit-missing-id">
+          Informe o ID da ficha na URL.
+        </p>
+        <Button variant="outline" asChild>
+          <Link href="/characters/">Voltar às fichas</Link>
+        </Button>
+      </div>
+    )
+  }
 
   if (authLoading || loading) {
     return (
@@ -55,6 +72,7 @@ export function CharacterEditClient({ id }: { id: string }) {
           <CharacterSheetEditor
             sheet={sheet}
             onChange={updateSheet}
+            showSummary
             saving={saving}
             lastSaved={lastSaved}
           />

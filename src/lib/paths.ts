@@ -7,4 +7,16 @@ export function withBasePath(path: string): string {
   return `${basePath.replace(/\/$/, '')}${normalized}`
 }
 
+export function characterEditPath(id: string) {
+  return `/characters/edit/?id=${encodeURIComponent(id)}`
+}
+
+export function roomPlayerPath(code: string) {
+  return `/room/player/?code=${encodeURIComponent(code)}`
+}
+
+export function roomMasterPath(code: string) {
+  return `/room/master/?code=${encodeURIComponent(code)}`
+}
+
 export { basePath }

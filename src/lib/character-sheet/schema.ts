@@ -18,6 +18,12 @@ const skillEntrySchema = z.object({
   progressMarks: z.number().int().min(0),
 })
 
+const gearAbilitySchema = z.object({
+  name: z.string(),
+  cost: z.string(),
+  description: z.string(),
+})
+
 export const characterSheetSchema = z.object({
   tier: z.union([z.literal(1), z.literal(2), z.literal(3)]),
   bio: z.object({
@@ -51,13 +57,16 @@ export const characterSheetSchema = z.object({
   aspect: z.object({
     templateId: z.string().nullable(),
     customName: z.string().max(120),
+    description: z.string().max(2000),
     oath: z.string().max(2000),
+    drive: z.string().max(2000),
     spells: z.array(
       z.object({
         id: z.string(),
         name: z.string().min(1),
         type: z.enum(['active', 'passive']),
-        description: z.string().optional(),
+        description: z.string(),
+        cost: z.string().optional(),
       })
     ),
   }),
@@ -66,35 +75,29 @@ export const characterSheetSchema = z.object({
       id: z.string(),
       name: z.string().min(1),
       source: z.enum(['ancestry', 'background', 'career', 'other']),
+      sourceOptionId: z.string().optional(),
+      cost: z.string().optional(),
       description: z.string(),
     })
   ),
   equipment: z.array(
     z.object({
       id: z.string(),
+      templateId: z.string().nullable().optional(),
       name: z.string().min(1),
       tier: z.union([z.literal(1), z.literal(2), z.literal(3)]),
       tags: z.array(z.string()),
       defense: z.number().int().min(0),
       wear: z.number().int().min(0),
       wearMax: z.number().int().min(0),
-      abilities: z.array(
-        z.object({
-          name: z.string(),
-          description: z.string(),
-        })
-      ),
+      charges: z.number().int().min(0).optional(),
+      range: z.string().optional(),
+      abilities: z.array(gearAbilitySchema),
     })
   ),
   supply: z.object({
     load: z.number().int().min(0),
-    items: z.array(
-      z.object({
-        id: z.string(),
-        name: z.string().min(1),
-        checked: z.boolean(),
-      })
-    ),
+    checked: z.record(z.string(), z.boolean()),
   }),
   economy: z.object({
     coinsOnHand: z.number().int().min(0),
