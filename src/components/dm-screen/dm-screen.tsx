@@ -7,6 +7,9 @@ import {
   adminTabsTriggerClass,
 } from '@/app/(admin)/[adminPath]/admin-tab-styles'
 import { CharacterSheetEditor } from '@/components/character-sheet/character-sheet-editor'
+import { FactionsTab } from '@/components/dm-screen/factions-tab'
+import { EnemiesTab } from '@/components/dm-screen/enemies-tab'
+import { PlayerPreviewTab } from '@/components/dm-screen/player-preview-tab'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,14 +18,18 @@ import { Textarea } from '@/components/ui/textarea'
 import { useRuleBlocks } from '@/features/characters/use-game-options'
 import { getCharacter } from '@/features/characters/api'
 import type { RoomParticipant } from '@/features/rooms/api'
-import { updateSessionState } from '@/features/rooms/api'
+import type { SessionState } from '@/types/session-state'
 import type { CharacterSheet } from '@/types/character-sheet'
 
 type DmScreenProps = {
   roomId: string
-  sessionState: Record<string, unknown>
+  roomName: string
+  roomCode: string
+  session: SessionState
+  updateSession: (updater: SessionState | ((prev: SessionState) => SessionState)) => void
+  saving?: boolean
+  lastSaved?: Date | null
   participants: RoomParticipant[]
-  onSessionUpdate?: (state: Record<string, unknown>) => void
 }
 
 const blockCardClass =
@@ -50,18 +57,26 @@ function MarkdownBlock({ body }: { body: string }) {
   )
 }
 
+function SaveIndicator({ saving, lastSaved }: { saving?: boolean; lastSaved?: Date | null }) {
+  const text = saving ? 'Salvando…' : lastSaved ? `Salvo ${lastSaved.toLocaleTimeString()}` : ''
+  if (!text) return null
+  return <p className="text-sm text-[var(--steel-light)]">{text}</p>
+}
+
 export function DmScreen({
   roomId,
-  sessionState,
+  roomName,
+  roomCode,
+  session,
+  updateSession,
+  saving,
+  lastSaved,
   participants,
-  onSessionUpdate,
 }: DmScreenProps) {
   const { blocks: rollBlocks } = useRuleBlocks('roll_results')
   const { blocks: combatBlocks } = useRuleBlocks('combat')
   const { blocks: resourceBlocks } = useRuleBlocks('resources')
 
-  const [notes, setNotes] = useState(String(sessionState.notes ?? ''))
-  const [heat, setHeat] = useState(Number(sessionState.heat ?? 0))
   const [viewCharacterId, setViewCharacterId] = useState<string | null>(null)
   const [viewSheet, setViewSheet] = useState<CharacterSheet | null>(null)
 
@@ -71,12 +86,6 @@ export function DmScreen({
       setViewSheet(row?.sheet_state ?? null)
     })
   }, [viewCharacterId])
-
-  const saveSession = async () => {
-    const next = { ...sessionState, notes, heat }
-    await updateSessionState(roomId, next)
-    onSessionUpdate?.(next)
-  }
 
   if (viewCharacterId) {
     if (!viewSheet) {
@@ -114,14 +123,23 @@ export function DmScreen({
         <TabsTrigger value="combat" className={adminTabsTriggerClass}>
           Combate
         </TabsTrigger>
+        <TabsTrigger value="enemies" className={adminTabsTriggerClass}>
+          Inimigos
+        </TabsTrigger>
         <TabsTrigger value="resources" className={adminTabsTriggerClass}>
           Recursos
         </TabsTrigger>
         <TabsTrigger value="session" className={adminTabsTriggerClass}>
           Sessão
         </TabsTrigger>
+        <TabsTrigger value="factions" className={adminTabsTriggerClass}>
+          Facções
+        </TabsTrigger>
         <TabsTrigger value="players" className={adminTabsTriggerClass}>
           Jogadores
+        </TabsTrigger>
+        <TabsTrigger value="preview" className={adminTabsTriggerClass}>
+          Preview
         </TabsTrigger>
       </TabsList>
 
@@ -147,6 +165,14 @@ export function DmScreen({
         ))}
       </TabsContent>
 
+      <TabsContent value="enemies" className="mt-4 space-y-4 overflow-y-auto">
+        <SaveIndicator saving={saving} lastSaved={lastSaved} />
+        <EnemiesTab
+          enemies={session.enemies}
+          onChange={(enemies) => updateSession((s) => ({ ...s, enemies }))}
+        />
+      </TabsContent>
+
       <TabsContent value="resources" className="mt-4 flex-1 space-y-4 overflow-y-auto">
         {resourceBlocks.map((block) => (
           <div key={block.id} className={blockCardClass}>
@@ -159,6 +185,7 @@ export function DmScreen({
       </TabsContent>
 
       <TabsContent value="session" className="mt-4 space-y-4">
+        <SaveIndicator saving={saving} lastSaved={lastSaved} />
         <div className="space-y-2">
           <Label htmlFor="session-heat" className="text-sm uppercase text-[var(--gold)]">
             Heat
@@ -167,9 +194,11 @@ export function DmScreen({
             id="session-heat"
             type="number"
             min={0}
-            value={heat}
+            value={session.heat}
             className="w-24"
-            onChange={(e) => setHeat(Number(e.target.value))}
+            onChange={(e) =>
+              updateSession((s) => ({ ...s, heat: Number(e.target.value) || 0 }))
+            }
           />
         </div>
         <div className="space-y-2">
@@ -178,12 +207,19 @@ export function DmScreen({
           </Label>
           <Textarea
             id="session-notes"
-            value={notes}
+            value={session.notes}
             rows={8}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(e) => updateSession((s) => ({ ...s, notes: e.target.value }))}
           />
         </div>
-        <Button onClick={() => void saveSession()}>Salvar sessão</Button>
+      </TabsContent>
+
+      <TabsContent value="factions" className="mt-4 space-y-4">
+        <SaveIndicator saving={saving} lastSaved={lastSaved} />
+        <FactionsTab
+          factions={session.factions}
+          onChange={(factions) => updateSession((s) => ({ ...s, factions }))}
+        />
       </TabsContent>
 
       <TabsContent value="players" className="mt-4 space-y-3">
@@ -216,6 +252,10 @@ export function DmScreen({
         {participants.filter((p) => p.session_role === 'player').length === 0 && (
           <p className="text-base text-[var(--steel-light)]">Nenhum jogador na sala ainda.</p>
         )}
+      </TabsContent>
+
+      <TabsContent value="preview" className="mt-4">
+        <PlayerPreviewTab roomId={roomId} roomName={roomName} roomCode={roomCode} />
       </TabsContent>
     </Tabs>
   )

@@ -14,6 +14,7 @@ type ChatPanelProps = {
   loading?: boolean
   onSend: (text: string) => Promise<void>
   currentUserId?: string | null
+  disabled?: boolean
 }
 
 function RollBadge({ outcome }: { outcome: RollOutcome }) {
@@ -29,7 +30,7 @@ function RollBadge({ outcome }: { outcome: RollOutcome }) {
   return <Badge variant={variant}>{outcomeLabel(outcome)}</Badge>
 }
 
-export function ChatPanel({ messages, loading, onSend, currentUserId }: ChatPanelProps) {
+export function ChatPanel({ messages, loading, onSend, currentUserId, disabled }: ChatPanelProps) {
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
 
@@ -107,6 +108,7 @@ export function ChatPanel({ messages, loading, onSend, currentUserId }: ChatPane
           value={input}
           placeholder="Mensagem ou /roll 4…"
           data-testid="chat-input"
+          disabled={disabled}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -117,7 +119,7 @@ export function ChatPanel({ messages, loading, onSend, currentUserId }: ChatPane
         />
         <Button
           onClick={() => void submit()}
-          disabled={sending || !input.trim()}
+          disabled={disabled || sending || !input.trim()}
           data-testid="chat-send"
         >
           Enviar

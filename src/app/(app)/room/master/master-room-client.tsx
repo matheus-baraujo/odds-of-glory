@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { DmScreen } from '@/components/dm-screen/dm-screen'
+import { SessionPortableControls } from '@/components/dm-screen/session-portable-controls'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-provider'
 import { useRequireAuth } from '@/features/auth/use-require-auth'
@@ -15,6 +16,7 @@ import {
   type GameRoom,
   type RoomParticipant,
 } from '@/features/rooms/api'
+import { useSessionState } from '@/features/rooms/use-session-state'
 
 export function MasterRoomClient() {
   const router = useRouter()
@@ -28,6 +30,16 @@ export function MasterRoomClient() {
   const [participants, setParticipants] = useState<RoomParticipant[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const handleSessionUpdate = useCallback((state: Record<string, unknown>) => {
+    setRoom((r) => (r ? { ...r, session_state: state } : r))
+  }, [])
+
+  const { session, updateSession, saving, lastSaved, error: sessionError } = useSessionState({
+    roomId: room?.id ?? '',
+    sessionState: room?.session_state ?? {},
+    onSessionUpdate: handleSessionUpdate,
+  })
 
   useEffect(() => {
     if (!isAuthenticated || !user || !code) return
@@ -113,17 +125,31 @@ export function MasterRoomClient() {
               </span>
             </p>
           </div>
-          <Button variant="outline" onClick={() => router.push('/lobby/')}>
-            ← Lobby
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <SessionPortableControls
+              session={session}
+              onImport={(data) => updateSession((s) => ({ ...s, ...data }))}
+            />
+            <Button variant="outline" onClick={() => router.push('/lobby/')}>
+              ← Lobby
+            </Button>
+          </div>
         </header>
+
+        {sessionError && (
+          <p className="mb-4 text-base text-[var(--crimson)]">{sessionError}</p>
+        )}
 
         <div className="min-h-[calc(100vh-10rem)] rounded-xl border border-[var(--parchment-deep)] bg-[var(--parchment)] p-4 lg:p-6">
           <DmScreen
             roomId={room.id}
-            sessionState={room.session_state}
+            roomName={room.name}
+            roomCode={room.code}
+            session={session}
+            updateSession={updateSession}
+            saving={saving}
+            lastSaved={lastSaved}
             participants={participants}
-            onSessionUpdate={(state) => setRoom((r) => (r ? { ...r, session_state: state } : r))}
           />
         </div>
       </div>

@@ -44,7 +44,7 @@ export async function createRoom(name: string): Promise<GameRoom> {
         name,
         master_id: user.id,
         status: 'lobby',
-        session_state: { heat: 0, notes: '', clocks: [] },
+        session_state: { heat: 0, notes: '', clocks: [], factions: [], enemies: [] },
       })
       .select('*')
       .single()
