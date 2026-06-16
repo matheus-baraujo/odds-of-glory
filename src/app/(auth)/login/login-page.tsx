@@ -8,7 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthLink, AuthShell } from '@/features/auth/auth-shell'
+import { withBasePath } from '@/lib/paths'
 import { createBrowserSupabaseClient, isSupabaseConfigured } from '@/lib/supabase/client'
+
+const AUTH_NEXT_KEY = 'auth_next'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -45,7 +48,8 @@ export default function LoginPage() {
 
     try {
       const supabase = createBrowserSupabaseClient()
-      const redirectTo = `${window.location.origin}${process.env.NEXT_PUBLIC_BASE_PATH ?? '/odds-of-glory'}/auth/callback/?next=${encodeURIComponent(next)}`
+      sessionStorage.setItem(AUTH_NEXT_KEY, next)
+      const redirectTo = `${window.location.origin}${withBasePath('/auth/callback/')}`
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo },

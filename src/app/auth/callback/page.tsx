@@ -7,10 +7,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AuthShell } from '@/features/auth/auth-shell'
 import { createBrowserSupabaseClient, isSupabaseConfigured } from '@/lib/supabase/client'
 
+const AUTH_NEXT_KEY = 'auth_next'
+
 function AuthCallbackInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const next = searchParams.get('next') ?? '/lobby/'
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -18,6 +19,10 @@ function AuthCallbackInner() {
       setError('Supabase não configurado.')
       return
     }
+
+    const storedNext = sessionStorage.getItem(AUTH_NEXT_KEY)
+    sessionStorage.removeItem(AUTH_NEXT_KEY)
+    const next = storedNext ?? searchParams.get('next') ?? '/lobby/'
 
     const supabase = createBrowserSupabaseClient()
 
@@ -49,7 +54,7 @@ function AuthCallbackInner() {
     }
 
     void finishAuth()
-  }, [router, searchParams, next])
+  }, [router, searchParams])
 
   return (
     <AuthShell title="Autenticando" subtitle="Finalizando login com PKCE…">

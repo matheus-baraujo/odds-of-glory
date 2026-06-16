@@ -71,9 +71,13 @@ update public.profiles set is_admin = true where id = '<uuid-do-usuario>';
 2. **Authorized redirect URIs** (Supabase callback):
    - `https://<project-ref>.supabase.co/auth/v1/callback`
 3. **Supabase Dashboard** → Authentication → Providers → Google: cole Client ID e Secret.
-4. **Supabase** → Authentication → URL Configuration → Redirect URLs:
-   - `http://localhost:3000/odds-of-glory/auth/callback/`
-   - `https://<user>.github.io/odds-of-glory/auth/callback/`
+4. **Supabase** → Authentication → URL Configuration:
+   - **Site URL:** `https://<user>.github.io/odds-of-glory/` (produção; use localhost apenas se for o único ambiente)
+   - **Redirect URLs** (match exato — sem query params extras):
+     - `http://localhost:3000/odds-of-glory/auth/callback/`
+     - `https://<user>.github.io/odds-of-glory/auth/callback/`
+
+O `redirectTo` do OAuth **não inclui** `?next=` — o destino pós-login é guardado em `sessionStorage` antes do redirect, para bater exatamente com a whitelist do Supabase. Se o redirect cair em localhost em produção, verifique a Site URL e se as Redirect URLs coincidem byte a byte com o callback (incluindo trailing slash).
 
 O app usa **PKCE** no cliente; tokens ficam no mecanismo client-side do Supabase (`localStorage`). Export estático no GitHub Pages não suporta cookies `httpOnly` sem backend dedicado.
 
