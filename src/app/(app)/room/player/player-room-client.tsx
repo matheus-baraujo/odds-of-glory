@@ -11,8 +11,8 @@ import { useAuth } from '@/features/auth/auth-provider'
 import { useRequireAuth } from '@/features/auth/use-require-auth'
 import { listCharacters } from '@/features/characters/api'
 import {
-  getRoomByCode,
   getRoomParticipant,
+  joinRoom,
   setParticipantCharacter,
   type GameRoom,
 } from '@/features/rooms/api'
@@ -41,11 +41,7 @@ export function PlayerRoomClient() {
 
     void (async () => {
       try {
-        const roomData = await getRoomByCode(code)
-        if (!roomData) {
-          setError('Sala não encontrada.')
-          return
-        }
+        const roomData = await joinRoom(code)
 
         const participant = await getRoomParticipant(roomData.id, user.id)
         if (!participant) {

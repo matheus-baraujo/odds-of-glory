@@ -50,11 +50,12 @@ export async function createRoom(name: string): Promise<GameRoom> {
       .single()
 
     if (!error && data) {
-      await supabase.from('room_participants').insert({
+      const { error: participantError } = await supabase.from('room_participants').insert({
         room_id: data.id,
         user_id: user.id,
         session_role: 'master',
       })
+      if (participantError) throw participantError
       return data as GameRoom
     }
 
@@ -77,33 +78,14 @@ export async function joinRoom(code: string): Promise<GameRoom> {
   if (!user) throw new Error('Not authenticated')
 
   const normalized = code.trim().toUpperCase()
-  const { data: room, error } = await supabase
-    .from('game_rooms')
-    .select('*')
-    .eq('code', normalized)
-    .maybeSingle()
+  const { data, error } = await supabase.rpc('join_room_by_code', {
+    p_code: normalized,
+  })
 
-  if (error) throw error
-  if (!room) throw new Error('Sala não encontrada.')
-  if (room.status === 'closed') throw new Error('Esta sala está fechada.')
+  if (error) throw new Error(error.message)
+  if (!data) throw new Error('Sala não encontrada.')
 
-  const { data: existing } = await supabase
-    .from('room_participants')
-    .select('*')
-    .eq('room_id', room.id)
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (!existing) {
-    const { error: joinError } = await supabase.from('room_participants').insert({
-      room_id: room.id,
-      user_id: user.id,
-      session_role: room.master_id === user.id ? 'master' : 'player',
-    })
-    if (joinError) throw joinError
-  }
-
-  return room as GameRoom
+  return data as GameRoom
 }
 
 export async function getRoomByCode(code: string): Promise<GameRoom | null> {
