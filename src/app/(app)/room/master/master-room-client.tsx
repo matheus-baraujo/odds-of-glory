@@ -4,11 +4,13 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 
+import { ChatPanel } from '@/components/chat/chat-panel'
 import { DmScreen } from '@/components/dm-screen/dm-screen'
 import { SessionPortableControls } from '@/components/dm-screen/session-portable-controls'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/auth-provider'
 import { useRequireAuth } from '@/features/auth/use-require-auth'
+import { useRoomChat } from '@/features/chat/use-room-chat'
 import {
   getRoomByCode,
   getRoomParticipant,
@@ -40,6 +42,11 @@ export function MasterRoomClient() {
     sessionState: room?.session_state ?? {},
     onSessionUpdate: handleSessionUpdate,
   })
+
+  const { messages, loading: chatLoading, handleInput, error: chatError } = useRoomChat(
+    room?.id ?? null,
+    user?.id ?? null
+  )
 
   useEffect(() => {
     if (!isAuthenticated || !user || !code) return
@@ -109,7 +116,7 @@ export function MasterRoomClient() {
 
   return (
     <div className="min-h-screen bg-[var(--parchment-dark)] px-4 py-6 lg:px-8">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="font-heading text-sm uppercase tracking-[0.35em] text-[var(--gold)]">
@@ -136,21 +143,31 @@ export function MasterRoomClient() {
           </div>
         </header>
 
-        {sessionError && (
-          <p className="mb-4 text-base text-[var(--crimson)]">{sessionError}</p>
+        {(sessionError || chatError) && (
+          <p className="mb-4 text-base text-[var(--crimson)]">{sessionError ?? chatError}</p>
         )}
 
-        <div className="min-h-[calc(100vh-10rem)] rounded-xl border border-[var(--parchment-deep)] bg-[var(--parchment)] p-4 lg:p-6">
-          <DmScreen
-            roomId={room.id}
-            roomName={room.name}
-            roomCode={room.code}
-            session={session}
-            updateSession={updateSession}
-            saving={saving}
-            lastSaved={lastSaved}
-            participants={participants}
-          />
+        <div className="grid gap-4 lg:grid-cols-[1fr_380px] lg:gap-6">
+          <div className="min-h-[calc(100vh-10rem)] rounded-xl border border-[var(--parchment-deep)] bg-[var(--parchment)] p-4 lg:p-6">
+            <DmScreen
+              roomId={room.id}
+              roomName={room.name}
+              roomCode={room.code}
+              session={session}
+              updateSession={updateSession}
+              saving={saving}
+              lastSaved={lastSaved}
+              participants={participants}
+            />
+          </div>
+          <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-10rem)]">
+            <ChatPanel
+              messages={messages}
+              loading={chatLoading}
+              currentUserId={user?.id}
+              onSend={handleInput}
+            />
+          </div>
         </div>
       </div>
     </div>

@@ -10,6 +10,8 @@ import { CharacterSheetEditor } from '@/components/character-sheet/character-she
 import { FactionsTab } from '@/components/dm-screen/factions-tab'
 import { EnemiesTab } from '@/components/dm-screen/enemies-tab'
 import { PlayerPreviewTab } from '@/components/dm-screen/player-preview-tab'
+import { RulesBlocksPanel } from '@/components/dm-screen/collapsible-rule-block'
+import { RuleBlockContent } from '@/components/dm-screen/rule-block-content'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -32,30 +34,6 @@ type DmScreenProps = {
   participants: RoomParticipant[]
 }
 
-const blockCardClass =
-  'rounded-lg border border-[var(--parchment-deep)] bg-[var(--parchment-dark)]/30 p-4'
-
-function MarkdownBlock({ body }: { body: string }) {
-  return (
-    <div className="prose prose-sm max-w-none whitespace-pre-wrap text-[var(--steel)]">
-      {body.split('\n').map((line, i) => {
-        if (line.startsWith('|')) {
-          return (
-            <span key={i} className="block font-mono text-sm">
-              {line}
-            </span>
-          )
-        }
-        const bold = line.replace(/\*\*(.+?)\*\*/g, '$1')
-        return (
-          <p key={i} className="mb-2">
-            {bold}
-          </p>
-        )
-      })}
-    </div>
-  )
-}
 
 function SaveIndicator({ saving, lastSaved }: { saving?: boolean; lastSaved?: Date | null }) {
   const text = saving ? 'Salvando…' : lastSaved ? `Salvo ${lastSaved.toLocaleTimeString()}` : ''
@@ -73,9 +51,8 @@ export function DmScreen({
   lastSaved,
   participants,
 }: DmScreenProps) {
-  const { blocks: rollBlocks } = useRuleBlocks('roll_results')
-  const { blocks: combatBlocks } = useRuleBlocks('combat')
-  const { blocks: resourceBlocks } = useRuleBlocks('resources')
+  const { blocks: referenceBlocks, loading: referenceLoading } = useRuleBlocks('roll_results')
+  const { blocks: combatBlocks, loading: combatLoading } = useRuleBlocks('combat')
 
   const [viewCharacterId, setViewCharacterId] = useState<string | null>(null)
   const [viewSheet, setViewSheet] = useState<CharacterSheet | null>(null)
@@ -126,9 +103,6 @@ export function DmScreen({
         <TabsTrigger value="enemies" className={adminTabsTriggerClass}>
           Inimigos
         </TabsTrigger>
-        <TabsTrigger value="resources" className={adminTabsTriggerClass}>
-          Recursos
-        </TabsTrigger>
         <TabsTrigger value="session" className={adminTabsTriggerClass}>
           Sessão
         </TabsTrigger>
@@ -143,26 +117,26 @@ export function DmScreen({
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="reference" className="mt-4 flex-1 space-y-4 overflow-y-auto">
-        {rollBlocks.map((block) => (
-          <div key={block.id} className={blockCardClass}>
-            <h3 className="mb-2 font-heading text-base font-semibold text-[var(--gold)]">
-              {block.title}
-            </h3>
-            <MarkdownBlock body={block.body} />
-          </div>
-        ))}
+      <TabsContent value="reference" className="mt-4 flex-1 overflow-y-auto">
+        <RulesBlocksPanel
+          blocks={referenceBlocks}
+          storageKey="dm-rules-ref"
+          loading={referenceLoading}
+          loadingLabel="Carregando referência…"
+          emptyLabel="Nenhum bloco publicado."
+          renderBody={(body) => <RuleBlockContent body={body} />}
+        />
       </TabsContent>
 
-      <TabsContent value="combat" className="mt-4 flex-1 space-y-4 overflow-y-auto">
-        {combatBlocks.map((block) => (
-          <div key={block.id} className={blockCardClass}>
-            <h3 className="mb-2 font-heading text-base font-semibold text-[var(--gold)]">
-              {block.title}
-            </h3>
-            <MarkdownBlock body={block.body} />
-          </div>
-        ))}
+      <TabsContent value="combat" className="mt-4 flex-1 overflow-y-auto">
+        <RulesBlocksPanel
+          blocks={combatBlocks}
+          storageKey="dm-rules-combat"
+          loading={combatLoading}
+          loadingLabel="Carregando combate…"
+          emptyLabel="Nenhum bloco publicado."
+          renderBody={(body) => <RuleBlockContent body={body} />}
+        />
       </TabsContent>
 
       <TabsContent value="enemies" className="mt-4 space-y-4 overflow-y-auto">
@@ -171,17 +145,6 @@ export function DmScreen({
           enemies={session.enemies}
           onChange={(enemies) => updateSession((s) => ({ ...s, enemies }))}
         />
-      </TabsContent>
-
-      <TabsContent value="resources" className="mt-4 flex-1 space-y-4 overflow-y-auto">
-        {resourceBlocks.map((block) => (
-          <div key={block.id} className={blockCardClass}>
-            <h3 className="mb-2 font-heading text-base font-semibold text-[var(--gold)]">
-              {block.title}
-            </h3>
-            <MarkdownBlock body={block.body} />
-          </div>
-        ))}
       </TabsContent>
 
       <TabsContent value="session" className="mt-4 space-y-4">

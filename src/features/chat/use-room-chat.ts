@@ -17,11 +17,21 @@ export type ChatMessage = {
   author_name?: string
 }
 
+function resolveAuthorName(
+  userId: string,
+  displayName: string | null | undefined,
+  roleByUserId: Record<string, string>
+): string {
+  if (roleByUserId[userId] === 'master') return 'Mestre'
+  return displayName ?? 'Jogador'
+}
+
 export function useRoomChat(roomId: string | null, userId: string | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const roleMapRef = useRef<Record<string, string>>({})
 
   const loadMessages = useCallback(async () => {
     if (!roomId) return
@@ -39,7 +49,7 @@ export function useRoomChat(roomId: string | null, userId: string | null) {
     }
 
     const userIds = [...new Set((data ?? []).map((m) => m.user_id))]
-    let nameMap: Record<string, string> = {}
+    let nameMap: Record<string, string | null> = {}
 
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
@@ -47,17 +57,25 @@ export function useRoomChat(roomId: string | null, userId: string | null) {
         .select('id, display_name')
         .in('id', userIds)
 
-      nameMap = Object.fromEntries(
-        (profiles ?? []).map((p) => [p.id, p.display_name ?? 'Jogador'])
-      )
+      nameMap = Object.fromEntries((profiles ?? []).map((p) => [p.id, p.display_name]))
     }
+
+    const { data: participants } = await supabase
+      .from('room_participants')
+      .select('user_id, session_role')
+      .eq('room_id', roomId)
+
+    const roleByUserId = Object.fromEntries(
+      (participants ?? []).map((p) => [p.user_id, p.session_role])
+    )
+    roleMapRef.current = roleByUserId
 
     setMessages(
       (data ?? []).map((m) => ({
         ...m,
         type: m.type as ChatMessageType,
         metadata: (m.metadata ?? {}) as Record<string, unknown>,
-        author_name: nameMap[m.user_id] ?? 'Jogador',
+        author_name: resolveAuthorName(m.user_id, nameMap[m.user_id], roleByUserId),
       }))
     )
   }, [roomId])
@@ -91,7 +109,7 @@ export function useRoomChat(roomId: string | null, userId: string | null) {
               ...prev,
               {
                 ...row,
-                author_name: 'Jogador',
+                author_name: resolveAuthorName(row.user_id, undefined, roleMapRef.current),
               },
             ]
           })
