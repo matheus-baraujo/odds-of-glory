@@ -23,6 +23,7 @@ import { AspectSection } from './aspect-section'
 import { CharacterSheetSummary } from './character-sheet-summary'
 import { EquipmentSection } from './equipment-section'
 import { PipTrackInput } from './pip-track'
+import { SkillsSection } from './skills-section'
 import { SupplySection } from './supply-section'
 
 export type CharacterSheetEditorMode = 'build' | 'play'
@@ -49,6 +50,7 @@ export function CharacterSheetEditor({
   const { options, byCategory, loading, error: optionsError } = useGameOptions()
   const isPlayMode = mode === 'play'
   const buildLocked = readOnly || isPlayMode
+  const skillsLocked = readOnly || isPlayMode
 
   const approaches = byCategory('approach')
   const skills = byCategory('skill')
@@ -58,6 +60,12 @@ export function CharacterSheetEditor({
   const backgrounds = byCategory('background')
   const careers = byCategory('career')
   const supplies = byCategory('supply')
+
+  const skillSections = [
+    { title: 'Combat Skills', items: combatSkills, prefix: 'combat_' },
+    { title: 'Perícias', items: skills, prefix: 'skill_' },
+    ...(!isPlayMode ? [{ title: 'Idiomas', items: languages, prefix: 'lang_' as const }] : []),
+  ]
 
   const approachLabel = (slug: string) =>
     approaches.find((a) => a.slug === slug)?.label ?? slug
@@ -138,22 +146,6 @@ export function CharacterSheetEditor({
         </div>
       )}
 
-      {isPlayMode && !readOnly && (
-        <div className="mb-4 rounded-lg border border-[var(--parchment-deep)] bg-[var(--parchment-dark)]/30 p-4">
-          <h3 className="mb-3 font-heading text-sm font-semibold uppercase tracking-wide text-[var(--gold)]">
-            Suprimentos em jogo
-          </h3>
-          <SupplySection
-            sheet={sheet}
-            supplies={supplies}
-            catalogError={optionsError}
-            supplyEditable
-            economyReadOnly
-            compact
-            onChange={onChange}
-          />
-        </div>
-      )}
 
       <Tabs
         key={mode}
@@ -163,11 +155,11 @@ export function CharacterSheetEditor({
         <TabsList className="flex h-auto flex-wrap gap-1 bg-[var(--parchment-dark)] p-1">
           {!isPlayMode && <TabsTrigger value="identity">Identidade</TabsTrigger>}
           <TabsTrigger value="core">Atitudes & Core</TabsTrigger>
-          {!isPlayMode && <TabsTrigger value="skills">Perícias</TabsTrigger>}
+          <TabsTrigger value="skills">Perícias</TabsTrigger>
           {!isPlayMode && <TabsTrigger value="aspect">Aspect & Spells</TabsTrigger>}
           <TabsTrigger value="abilities">Habilidades</TabsTrigger>
           <TabsTrigger value="equipment">Equipamento</TabsTrigger>
-          {!isPlayMode && <TabsTrigger value="supply">Suprimentos</TabsTrigger>}
+          <TabsTrigger value="supply">Suprimentos</TabsTrigger>
           <TabsTrigger value="social">Social & Downtime</TabsTrigger>
         </TabsList>
 
@@ -470,75 +462,13 @@ export function CharacterSheetEditor({
           </div>
         </TabsContent>
 
-        <TabsContent value="skills" className="mt-4 space-y-6 overflow-y-auto">
-          {[
-            { title: 'Combat Skills', items: combatSkills, prefix: 'combat_' },
-            { title: 'Perícias', items: skills, prefix: 'skill_' },
-            { title: 'Idiomas', items: languages, prefix: 'lang_' },
-          ].map(({ title, items, prefix }) => (
-            <div key={title}>
-              <h3 className="mb-2 font-heading text-base font-semibold text-[var(--gold)]">
-                {title}
-              </h3>
-              <div className="space-y-2">
-                {items.map((opt) => {
-                  const key = `${prefix}${opt.slug}`
-                  const entry = sheet.skills[key] ?? { dots: 0, progressMarks: 0 }
-                  return (
-                    <div
-                      key={opt.id}
-                      className="flex flex-wrap items-center gap-3 rounded border border-[var(--parchment-deep)] px-3 py-2"
-                    >
-                      <span className="min-w-[120px] text-base font-medium">{opt.label}</span>
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3].map((dot) => (
-                          <button
-                            key={dot}
-                            type="button"
-                            disabled={readOnly}
-                            className={`size-4 rounded-full border-2 ${
-                              dot <= entry.dots
-                                ? 'border-[var(--steel)] bg-[var(--steel)]'
-                                : 'border-[var(--parchment-deep)]'
-                            }`}
-                            onClick={() =>
-                              onChange((p) => ({
-                                ...p,
-                                skills: {
-                                  ...p.skills,
-                                  [key]: {
-                                    ...entry,
-                                    dots: entry.dots === dot ? dot - 1 : dot,
-                                  },
-                                },
-                              }))
-                            }
-                          />
-                        ))}
-                      </div>
-                      <label className="flex items-center gap-1 text-base">
-                        <input
-                          type="checkbox"
-                          checked={entry.edge ?? false}
-                          disabled={readOnly}
-                          onChange={(e) =>
-                            onChange((p) => ({
-                              ...p,
-                              skills: {
-                                ...p.skills,
-                                [key]: { ...entry, edge: e.target.checked },
-                              },
-                            }))
-                          }
-                        />
-                        Edge
-                      </label>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
+        <TabsContent value="skills" className="mt-4 overflow-y-auto">
+          <SkillsSection
+            sheet={sheet}
+            sections={skillSections}
+            locked={skillsLocked}
+            onChange={onChange}
+          />
         </TabsContent>
 
         <TabsContent value="aspect" className="mt-4 overflow-y-auto">
@@ -549,6 +479,7 @@ export function CharacterSheetEditor({
           <AbilitiesSection
             abilities={sheet.abilities}
             readOnly={readOnly || isPlayMode}
+            compact={isPlayMode}
             onChange={onChange}
           />
         </TabsContent>
@@ -568,6 +499,9 @@ export function CharacterSheetEditor({
             supplies={supplies}
             catalogError={optionsError}
             readOnly={readOnly}
+            supplyEditable={isPlayMode ? !readOnly : undefined}
+            economyReadOnly={isPlayMode ? true : undefined}
+            compact={isPlayMode}
             onChange={onChange}
           />
         </TabsContent>

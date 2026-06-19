@@ -1,6 +1,14 @@
 'use client'
 
+import { useState } from 'react'
+import { ChevronDown } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
@@ -10,6 +18,7 @@ import {
   createEmptyGearItem,
   importEquipmentTemplate,
 } from '@/lib/character-sheet/import-templates'
+import { cn } from '@/lib/utils'
 import type { CharacterSheet, GearItem } from '@/types/character-sheet'
 
 import { ContentWarningBanner } from './content-warning-banner'
@@ -20,6 +29,123 @@ type EquipmentSectionProps = {
   readOnly?: boolean
   playMode?: boolean
   onChange: (updater: (prev: CharacterSheet) => CharacterSheet) => void
+}
+
+function PlayModeEquipmentItem({
+  item,
+  idx,
+  readOnly,
+  defaultOpen,
+  onChange,
+}: {
+  item: GearItem
+  idx: number
+  readOnly?: boolean
+  defaultOpen: boolean
+  onChange: EquipmentSectionProps['onChange']
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+
+  const updateItem = (patch: Partial<GearItem>) => {
+    onChange((p) => {
+      const equipment = [...p.equipment]
+      equipment[idx] = { ...equipment[idx], ...patch }
+      return { ...p, equipment }
+    })
+  }
+
+  return (
+    <Collapsible
+      open={open}
+      onOpenChange={setOpen}
+      className="rounded border border-[var(--parchment-deep)]"
+      data-testid="equipment-item"
+    >
+      <CollapsibleTrigger className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left">
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium text-[var(--ink)]">{item.name}</p>
+          <p className="mt-0.5 text-xs text-[var(--steel-light)]">
+            Def {item.defense} · Wear {item.wear}/{item.wearMax}
+          </p>
+        </div>
+        <ChevronDown
+          className={cn(
+            'size-4 shrink-0 text-[var(--steel-light)] transition-transform duration-200',
+            open && 'rotate-180'
+          )}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="space-y-3 border-t border-[var(--parchment-deep)]/60 px-3 py-3">
+          <div className="grid gap-2 text-sm sm:grid-cols-2">
+            <div>
+              <span className="text-[var(--steel-light)]">Defesa: </span>
+              <span className="text-[var(--ink)]">{item.defense}</span>
+            </div>
+            {item.charges !== undefined && (
+              <div>
+                <span className="text-[var(--steel-light)]">Cargas: </span>
+                <span className="text-[var(--ink)]">{item.charges}</span>
+              </div>
+            )}
+            {item.range && (
+              <div>
+                <span className="text-[var(--steel-light)]">Alcance: </span>
+                <span className="text-[var(--ink)]">{item.range}</span>
+              </div>
+            )}
+          </div>
+
+          {item.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {item.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded bg-[var(--parchment-dark)] px-2 py-0.5 text-xs uppercase tracking-wide text-[var(--steel-light)]"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <PipTrackInput
+            label="Wear"
+            filled={item.wear}
+            max={item.wearMax}
+            readOnly={readOnly}
+            onChange={(wear) => updateItem({ wear })}
+          />
+
+          {item.abilities.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--gold)]">
+                Habilidades ativas
+              </p>
+              {item.abilities.map((ability, abilityIdx) => (
+                <div
+                  key={abilityIdx}
+                  className="rounded border border-[var(--parchment-deep)]/60 p-2 text-sm"
+                >
+                  <p className="font-medium text-[var(--ink)]">
+                    {ability.name}
+                    {ability.cost && (
+                      <span className="ml-2 text-[var(--steel-light)]">({ability.cost})</span>
+                    )}
+                  </p>
+                  {ability.description && (
+                    <p className="mt-1 whitespace-pre-wrap text-[var(--steel)]">
+                      {ability.description}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  )
 }
 
 export function EquipmentSection({
@@ -101,176 +227,177 @@ export function EquipmentSection({
         </div>
       )}
 
-      {sheet.equipment.map((item, idx) => (
-        <div
-          key={item.id}
-          className="space-y-3 rounded border border-[var(--parchment-deep)] p-3"
-          data-testid="equipment-item"
-        >
-          <div className="flex items-start justify-between gap-2">
-            {playMode ? (
-              <p className="font-medium text-[var(--ink)]">{item.name}</p>
-            ) : (
-              <Input
-                value={item.name}
-                readOnly={buildLocked}
-                className="font-medium"
-                onChange={(e) => updateItem(idx, { name: e.target.value })}
-              />
-            )}
-            {!buildLocked && (
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() =>
-                  onChange((p) => ({
-                    ...p,
-                    equipment: p.equipment.filter((_, i) => i !== idx),
-                  }))
-                }
-              >
-                Remover
-              </Button>
-            )}
-          </div>
-
-          {!playMode && (
-            <>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-1">
-              <Label>Wear max</Label>
-              <Input
-                type="number"
-                min={0}
-                value={item.wearMax}
-                readOnly={buildLocked}
-                onChange={(e) => updateItem(idx, { wearMax: Number(e.target.value) })}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Defesa</Label>
-              <Input
-                type="number"
-                min={0}
-                value={item.defense}
-                readOnly={buildLocked}
-                onChange={(e) => updateItem(idx, { defense: Number(e.target.value) })}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Cargas</Label>
-              <Input
-                type="number"
-                min={0}
-                value={item.charges ?? 0}
-                readOnly={buildLocked}
-                onChange={(e) => updateItem(idx, { charges: Number(e.target.value) })}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label>Alcance</Label>
-              <Input
-                value={item.range ?? ''}
-                readOnly={buildLocked}
-                onChange={(e) => updateItem(idx, { range: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <Label>Tags (vírgula)</Label>
-            <Input
-              value={item.tags.join(', ')}
-              readOnly={buildLocked}
-              onChange={(e) =>
-                updateItem(idx, {
-                  tags: e.target.value
-                    .split(',')
-                    .map((t) => t.trim())
-                    .filter(Boolean),
-                })
-              }
+      {playMode
+        ? sheet.equipment.map((item, idx) => (
+            <PlayModeEquipmentItem
+              key={item.id}
+              item={item}
+              idx={idx}
+              readOnly={readOnly}
+              defaultOpen={idx === 0}
+              onChange={onChange}
             />
-          </div>
-            </>
-          )}
-
-          <PipTrackInput
-            label="Wear"
-            filled={item.wear}
-            max={item.wearMax}
-            readOnly={readOnly}
-            onChange={(wear) => updateItem(idx, { wear })}
-          />
-
-          {!playMode && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Habilidades ativas</Label>
-              {!buildLocked && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    updateItem(idx, {
-                      abilities: [
-                        ...item.abilities,
-                        { name: '', cost: '1', description: '' },
-                      ],
-                    })
-                  }
-                >
-                  + Habilidade
-                </Button>
-              )}
-            </div>
-            {item.abilities.map((ability, abilityIdx) => (
-              <div
-                key={abilityIdx}
-                className="grid gap-2 rounded border border-[var(--parchment-deep)]/60 p-2 sm:grid-cols-[80px_1fr_auto]"
-              >
+          ))
+        : sheet.equipment.map((item, idx) => (
+            <div
+              key={item.id}
+              className="space-y-3 rounded border border-[var(--parchment-deep)] p-3"
+              data-testid="equipment-item"
+            >
+              <div className="flex items-start justify-between gap-2">
                 <Input
-                  placeholder="Custo"
-                  value={ability.cost}
+                  value={item.name}
                   readOnly={buildLocked}
-                  onChange={(e) => updateAbility(idx, abilityIdx, { cost: e.target.value })}
+                  className="font-medium"
+                  onChange={(e) => updateItem(idx, { name: e.target.value })}
                 />
-                <div className="space-y-1">
-                  <Input
-                    placeholder="Nome"
-                    value={ability.name}
-                    readOnly={buildLocked}
-                    onChange={(e) => updateAbility(idx, abilityIdx, { name: e.target.value })}
-                  />
-                  <Textarea
-                    placeholder="Descrição"
-                    rows={2}
-                    value={ability.description}
-                    readOnly={buildLocked}
-                    onChange={(e) =>
-                      updateAbility(idx, abilityIdx, { description: e.target.value })
-                    }
-                  />
-                </div>
                 {!buildLocked && (
                   <Button
                     size="sm"
                     variant="destructive"
                     onClick={() =>
-                      updateItem(idx, {
-                        abilities: item.abilities.filter((_, i) => i !== abilityIdx),
-                      })
+                      onChange((p) => ({
+                        ...p,
+                        equipment: p.equipment.filter((_, i) => i !== idx),
+                      }))
                     }
                   >
-                    ×
+                    Remover
                   </Button>
                 )}
               </div>
-            ))}
-          </div>
-          )}
-        </div>
-      ))}
+
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="space-y-1">
+                  <Label>Wear max</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={item.wearMax}
+                    readOnly={buildLocked}
+                    onChange={(e) => updateItem(idx, { wearMax: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Defesa</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={item.defense}
+                    readOnly={buildLocked}
+                    onChange={(e) => updateItem(idx, { defense: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Cargas</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={item.charges ?? 0}
+                    readOnly={buildLocked}
+                    onChange={(e) => updateItem(idx, { charges: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Alcance</Label>
+                  <Input
+                    value={item.range ?? ''}
+                    readOnly={buildLocked}
+                    onChange={(e) => updateItem(idx, { range: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label>Tags (vírgula)</Label>
+                <Input
+                  value={item.tags.join(', ')}
+                  readOnly={buildLocked}
+                  onChange={(e) =>
+                    updateItem(idx, {
+                      tags: e.target.value
+                        .split(',')
+                        .map((t) => t.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                />
+              </div>
+
+              <PipTrackInput
+                label="Wear"
+                filled={item.wear}
+                max={item.wearMax}
+                readOnly={readOnly}
+                onChange={(wear) => updateItem(idx, { wear })}
+              />
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Habilidades ativas</Label>
+                  {!buildLocked && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        updateItem(idx, {
+                          abilities: [
+                            ...item.abilities,
+                            { name: '', cost: '1', description: '' },
+                          ],
+                        })
+                      }
+                    >
+                      + Habilidade
+                    </Button>
+                  )}
+                </div>
+                {item.abilities.map((ability, abilityIdx) => (
+                  <div
+                    key={abilityIdx}
+                    className="grid gap-2 rounded border border-[var(--parchment-deep)]/60 p-2 sm:grid-cols-[80px_1fr_auto]"
+                  >
+                    <Input
+                      placeholder="Custo"
+                      value={ability.cost}
+                      readOnly={buildLocked}
+                      onChange={(e) => updateAbility(idx, abilityIdx, { cost: e.target.value })}
+                    />
+                    <div className="space-y-1">
+                      <Input
+                        placeholder="Nome"
+                        value={ability.name}
+                        readOnly={buildLocked}
+                        onChange={(e) => updateAbility(idx, abilityIdx, { name: e.target.value })}
+                      />
+                      <Textarea
+                        placeholder="Descrição"
+                        rows={2}
+                        value={ability.description}
+                        readOnly={buildLocked}
+                        onChange={(e) =>
+                          updateAbility(idx, abilityIdx, { description: e.target.value })
+                        }
+                      />
+                    </div>
+                    {!buildLocked && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() =>
+                          updateItem(idx, {
+                            abilities: item.abilities.filter((_, i) => i !== abilityIdx),
+                          })
+                        }
+                      >
+                        ×
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
     </div>
   )
 }
