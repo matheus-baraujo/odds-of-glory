@@ -79,6 +79,13 @@ update public.profiles set is_admin = true where id = '<uuid-do-usuario>';
 
 O `redirectTo` do OAuth **não inclui** `?next=` — o destino pós-login é guardado em `sessionStorage` antes do redirect, para bater exatamente com a whitelist do Supabase. Se o redirect cair em localhost em produção, verifique a Site URL e se as Redirect URLs coincidem byte a byte com o callback (incluindo trailing slash).
 
+### Confirmação de email (cadastro manual)
+
+O cadastro envia `emailRedirectTo` apontando para `/auth/callback/` na origem atual (mesma URL do OAuth). Sem isso, o Supabase usa a **Site URL** do Dashboard no link do email — se ela estiver em `localhost`, usuários em produção serão redirecionados para localhost ao confirmar.
+
+- **Redirect URLs** já listadas acima cobrem OAuth e confirmação de email.
+- **Site URL:** prefira a URL de produção (`https://<user>.github.io/odds-of-glory/`) como fallback padrão; mantenha localhost só se for o único ambiente.
+
 O app usa **PKCE** no cliente; tokens ficam no mecanismo client-side do Supabase (`localStorage`). Export estático no GitHub Pages não suporta cookies `httpOnly` sem backend dedicado.
 
 ## Desenvolvimento local

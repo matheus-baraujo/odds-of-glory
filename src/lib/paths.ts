@@ -7,6 +7,11 @@ export function withBasePath(path: string): string {
   return `${basePath.replace(/\/$/, '')}${normalized}`
 }
 
+/** Auth callback URL for OAuth and email confirmation (client-only — requires window). */
+export function authCallbackUrl(): string {
+  return `${window.location.origin}${withBasePath('/auth/callback/')}`
+}
+
 export function characterEditPath(id: string) {
   return `/characters/edit/?id=${encodeURIComponent(id)}`
 }

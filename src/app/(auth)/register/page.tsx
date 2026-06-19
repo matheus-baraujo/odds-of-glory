@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthLink, AuthShell } from '@/features/auth/auth-shell'
+import { authCallbackUrl } from '@/lib/paths'
 import { createBrowserSupabaseClient, isSupabaseConfigured } from '@/lib/supabase/client'
 
 export default function RegisterPage() {
@@ -32,6 +33,7 @@ export default function RegisterPage() {
         password,
         options: {
           data: { display_name: displayName || email.split('@')[0] },
+          emailRedirectTo: authCallbackUrl(),
         },
       })
 
