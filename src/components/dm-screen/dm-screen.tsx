@@ -118,25 +118,31 @@ export function DmScreen({
       </TabsList>
 
       <TabsContent value="reference" className="mt-4 flex-1 overflow-y-auto">
-        <RulesBlocksPanel
-          blocks={referenceBlocks}
-          storageKey="dm-rules-ref"
-          loading={referenceLoading}
-          loadingLabel="Carregando referência…"
-          emptyLabel="Nenhum bloco publicado."
-          renderBody={(body) => <RuleBlockContent body={body} />}
-        />
+        {referenceLoading ? (
+          <p className="text-sm text-[var(--steel-light)]">Carregando referência…</p>
+        ) : referenceBlocks.length === 0 ? (
+          <p className="text-sm text-[var(--steel-light)]">Nenhum bloco publicado.</p>
+        ) : (
+          <RulesBlocksPanel
+            blocks={referenceBlocks}
+            storageKey="dm-rules-ref"
+            renderBody={(body) => <RuleBlockContent body={body} />}
+          />
+        )}
       </TabsContent>
 
       <TabsContent value="combat" className="mt-4 flex-1 overflow-y-auto">
-        <RulesBlocksPanel
-          blocks={combatBlocks}
-          storageKey="dm-rules-combat"
-          loading={combatLoading}
-          loadingLabel="Carregando combate…"
-          emptyLabel="Nenhum bloco publicado."
-          renderBody={(body) => <RuleBlockContent body={body} />}
-        />
+        {combatLoading ? (
+          <p className="text-sm text-[var(--steel-light)]">Carregando combate…</p>
+        ) : combatBlocks.length === 0 ? (
+          <p className="text-sm text-[var(--steel-light)]">Nenhum bloco publicado.</p>
+        ) : (
+          <RulesBlocksPanel
+            blocks={combatBlocks}
+            storageKey="dm-rules-combat"
+            renderBody={(body) => <RuleBlockContent body={body} />}
+          />
+        )}
       </TabsContent>
 
       <TabsContent value="enemies" className="mt-4 space-y-4 overflow-y-auto">

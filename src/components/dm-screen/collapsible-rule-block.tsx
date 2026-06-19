@@ -38,8 +38,16 @@ function buildDefaultState(blockIds: string[]): Record<string, boolean> {
   return Object.fromEntries(blockIds.map((id, index) => [id, index === 0]))
 }
 
+function getInitialOpenState(
+  storageKey: string,
+  blockIds: string[]
+): Record<string, boolean> {
+  const stored = readStoredState(storageKey)
+  const merged = { ...buildDefaultState(blockIds), ...stored }
+  return Object.fromEntries(blockIds.map((id) => [id, merged[id] ?? false]))
+}
+
 type CollapsibleRuleBlockProps = {
-  id: string
   title: string
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -75,41 +83,22 @@ function CollapsibleRuleBlock({
 type RulesBlocksPanelProps = {
   blocks: RuleBlock[]
   storageKey: string
-  loading: boolean
-  loadingLabel: string
-  emptyLabel: string
   renderBody: (body: string) => ReactNode
 }
 
 export function RulesBlocksPanel({
   blocks,
   storageKey,
-  loading,
-  loadingLabel,
-  emptyLabel,
   renderBody,
 }: RulesBlocksPanelProps) {
   const blockIds = blocks.map((b) => b.id)
   const [openState, setOpenState] = useState<Record<string, boolean>>(() =>
-    buildDefaultState(blockIds)
+    getInitialOpenState(storageKey, blockIds)
   )
-  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
-    if (blockIds.length === 0) return
-    const stored = readStoredState(storageKey)
-    const merged = { ...buildDefaultState(blockIds), ...stored }
-    const filtered = Object.fromEntries(
-      blockIds.map((id) => [id, merged[id] ?? false])
-    )
-    setOpenState(filtered)
-    setHydrated(true)
-  }, [storageKey, blockIds.join(',')])
-
-  useEffect(() => {
-    if (!hydrated || blockIds.length === 0) return
     writeStoredState(storageKey, openState)
-  }, [openState, storageKey, hydrated, blockIds.length])
+  }, [openState, storageKey])
 
   const setBlockOpen = useCallback((id: string, open: boolean) => {
     setOpenState((prev) => ({ ...prev, [id]: open }))
@@ -123,12 +112,8 @@ export function RulesBlocksPanel({
     setOpenState(Object.fromEntries(blockIds.map((id) => [id, false])))
   }, [blockIds])
 
-  if (loading) {
-    return <p className="text-sm text-[var(--steel-light)]">{loadingLabel}</p>
-  }
-
   if (blocks.length === 0) {
-    return <p className="text-sm text-[var(--steel-light)]">{emptyLabel}</p>
+    return null
   }
 
   return (
@@ -145,7 +130,6 @@ export function RulesBlocksPanel({
         {blocks.map((block) => (
           <CollapsibleRuleBlock
             key={block.id}
-            id={block.id}
             title={block.title}
             open={openState[block.id] ?? false}
             onOpenChange={(open) => setBlockOpen(block.id, open)}
